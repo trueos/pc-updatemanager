@@ -15,7 +15,7 @@ MAKE_ARGS=	PREFIX=${STAGEDIR}${PREFIX}
 
 USE_GITHUB=	yes
 GH_ACCOUNT=	trueos
-GH_PROJECT=	pc-updatemanager
+GH_PROJECT=	pc-updatemanager-next
 GH_TAGNAME=	%%GHTAG%%
 
 .include <bsd.port.mk>
