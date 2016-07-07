@@ -1198,11 +1198,11 @@ build_pkg_list()
   fi
 
   # Figure out which base to install
-  pkg info -e trueos-base
-  if [ $? -eq 0 -o -e "/etc/defaults/trueos" ] ; then
-     SYSBASE="misc/trueos-base"
+  pkg info -e trueos-desktop
+  if [ $? -eq 0 -o -e "/etc/defaults/trueos-desktop" ] ; then
+     SYSBASE="misc/trueos-desktop"
   else
-     SYSBASE="misc/trueos-base"
+     SYSBASE="misc/trueos-server"
   fi
   SYSBASEORIGIN="$SYSBASE"
 
@@ -1210,7 +1210,7 @@ build_pkg_list()
   echo "$SYSBASEORIGIN" > ${STATEDIR}/.sysbaseorigin
 
   # Build top-level list of pkgs installed
-  ${PKG_CMD} query -e '%#r=0' '%o %n-%v' | sort | grep -v 'ports-mgmt/pkg ' | grep -v 'misc/trueos-base ' | grep -v 'misc/trueos-base ' > $OLDPKGLIST
+  ${PKG_CMD} query -e '%#r=0' '%o %n-%v' | sort | grep -v 'ports-mgmt/pkg ' | grep -v 'misc/trueos-desktop ' | grep -v 'misc/trueos-server ' > $OLDPKGLIST
 
   # If GRUB is used for boot, require it to be installed
   if [ -e "/boot/grub/grub.cfg" ]; then
