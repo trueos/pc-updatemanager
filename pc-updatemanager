@@ -362,24 +362,12 @@ setup_pkgng_conf() {
   fi
 
   ARCH=`uname -m`
-  FBSDVER=`uname -r | cut -d '-' -f 1-2`
-  MAJORVER="$FBSDVER"
-
-  # If using the EDGE package set, set the right path
-  case $PACKAGE_SET in
-       EDGE) FBSDVER="$FBSDVER/edge"
-	     MAJORVER="$MAJORVER/edge"
-	     ;;
- ENTERPRISE) FBSDVER="$FBSDVER/enterprise"
-	     MAJORVER="$MAJORVER/enterprise"
-	     ;;
-          *) ;;
-  esac
+  PKGVER="master"
 
   # Now create standard trueos.conf file
   if [ "$PACKAGE_SET" = "CUSTOM" -a -n "$CUSTOM_URL" ] ; then
      # Change %VERSION% / %ARCH% keys
-     CUSTOM_URL=`echo $CUSTOM_URL | sed "s|%VERSION%|$MAJORVER|g" | sed "s|%ARCH%|$ARCH|g" | sed 's|/$||g'`
+     CUSTOM_URL=`echo $CUSTOM_URL | sed "s|%VERSION%|$PKGVER|g" | sed "s|%ARCH%|$ARCH|g" | sed 's|/$||g'`
      cat << EOF >/usr/local/etc/pkg/repos/trueos.conf
 trueos-major: {
                url: "$CUSTOM_URL",
@@ -389,7 +377,7 @@ trueos-major: {
               }
 EOF
      # Now do the same for base packages
-     CUSTOM_URL=`echo $CUSTOM_URL | sed "s|%VERSION%|$MAJORVER|g" | sed "s|%ARCH%|$ARCH|g" | sed 's|/$||g'`
+     CUSTOM_URL=`echo $CUSTOM_URL | sed "s|%VERSION%|$PKGVER|g" | sed "s|%ARCH%|$ARCH|g" | sed 's|/$||g'`
      cat << EOF >/usr/local/etc/pkg/repos/trueos-base.conf
 trueos-base: {
                url: "${CUSTOM_URL}-base",
@@ -406,17 +394,13 @@ EOF
 sed_pkg_repo_file_http() {
   cat /usr/local/etc/pkg/repos/trueos.conf.dist \
 	| sed "s|trueos: |trueos-major: |g" \
-	| sed "s|%VERSION%|$MAJORVER|g" \
-	| sed "s|%ARCH%|$ARCH|g" \
-	| sed "s|VERSION|$MAJORVER|g" \
-	| sed "s|ARCH|$ARCH|g" > /usr/local/etc/pkg/repos/trueos.conf
+	| sed "s|%VERSION%|$PKGVER|g" \
+	| sed "s|%ARCH%|$ARCH|g" > /usr/local/etc/pkg/repos/trueos.conf
 
   cat /usr/local/etc/pkg/repos/trueos.conf.dist \
 	| sed "s|trueos: |trueos-base: |g" \
-	| sed "s|%VERSION%|$MAJORVER|g" \
-	| sed "s|%ARCH%|$ARCH|g" \
-	| sed "s|VERSION|$MAJORVER|g" \
-	| sed "s|ARCH|${ARCH}-base|g" > /usr/local/etc/pkg/repos/trueos-base.conf
+	| sed "s|%VERSION%|$PKGVER|g" \
+	| sed "s|%ARCH%|$ARCH|g" > /usr/local/etc/pkg/repos/trueos-base.conf
 }
 
 get_update_file() {
@@ -1134,8 +1118,7 @@ setup_pkgng_newrepo_conf() {
   fi
 
   ARCH=`uname -m`
-  FBSDVER="$NEWFREEBSDVERSION"
-  MAJORVER="$FBSDVER"
+  PKGVER="master"
 
   # If using the EDGE package set, set the right path
   case $PACKAGE_SET in
@@ -1151,7 +1134,7 @@ setup_pkgng_newrepo_conf() {
   # Now create standard trueos.conf file
   if [ "$PACKAGE_SET" = "CUSTOM" -a -n "$CUSTOM_URL" ] ; then
      # Change %VERSION% / %ARCH% keys
-     CUSTOM_URL=`echo $CUSTOM_URL | sed "s|%VERSION%|$MAJORVER|g" | sed "s|%ARCH%|$ARCH|g" | sed 's|/$||g'`
+     CUSTOM_URL=`echo $CUSTOM_URL | sed "s|%VERSION%|$PKGVER|g" | sed "s|%ARCH%|$ARCH|g" | sed 's|/$||g'`
      cat << EOF >/usr/local/tmp/.updateRepo/pkgUpdateRepo.conf
 trueos-major: {
                url: "$CUSTOM_URL",
@@ -1170,16 +1153,12 @@ EOF
     # Using PC-BSD CDN
     cat /usr/local/etc/pkg/repos/trueos.conf.dist \
       | sed "s|trueos: |trueos-major: |g" \
-      | sed "s|%VERSION%|$MAJORVER|g" \
-      | sed "s|%ARCH%|$ARCH|g" \
-      | sed "s|VERSION|$MAJORVER|g" \
-      | sed "s|ARCH|$ARCH|g" > /usr/local/tmp/.updateRepo/pkgUpdateRepo.conf
+      | sed "s|%VERSION%|$PKGVER|g" \
+      | sed "s|%ARCH%|$ARCH|g" > /usr/local/tmp/.updateRepo/pkgUpdateRepo.conf
     cat /usr/local/etc/pkg/repos/trueos.conf.dist \
       | sed "s|trueos: |trueos-base: |g" \
-      | sed "s|%VERSION%|$MAJORVER|g" \
-      | sed "s|%ARCH%|$ARCH|g" \
-      | sed "s|VERSION|$MAJORVER|g" \
-      | sed "s|ARCH|${ARCH}-base|g" >> /usr/local/tmp/.updateRepo/pkgUpdateRepo.conf
+      | sed "s|%VERSION%|$PKGVER|g" \
+      | sed "s|%ARCH%|$ARCH|g" >> /usr/local/tmp/.updateRepo/pkgUpdateRepo.conf
   fi
 
   # Set the new PKG_FLAG to use this repo config
