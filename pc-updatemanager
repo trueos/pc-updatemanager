@@ -400,7 +400,7 @@ sed_pkg_repo_file_http() {
   cat /usr/local/etc/pkg/repos/trueos.conf.dist \
 	| sed "s|trueos: |trueos-base: |g" \
 	| sed "s|%VERSION%|$PKGVER|g" \
-	| sed "s|%ARCH%|$ARCH|g" > /usr/local/etc/pkg/repos/trueos-base.conf
+	| sed "s|%ARCH%|${ARCH}-base|g" > /usr/local/etc/pkg/repos/trueos-base.conf
 }
 
 get_update_file() {
