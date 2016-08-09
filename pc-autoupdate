@@ -10,42 +10,8 @@ export trueos_ETCCONF
 
 # Available settings
 # all - Will upgrade to new major releases, security and pkg
-# security - Will only apply security updates (freebsd-update)
-# securitypkg - Will apply security updates and package updates - default
-# pkg - Will only apply package updates
 # disabled - Don't do ANY automatic updates
-AUTO_UPDATE="securitypkg"
-
-check_major()
-{
-  nice pc-updatemanager check >/tmp/.updateCheckOut.$$ 2>/dev/null
-  rtn=$?
-  if [ $rtn -eq 151 -o $rtn -eq 152 ] ; then
-     sleep $waittime
-     # We have a major update! Lets start it now
-     tag="`cat /tmp/.updateCheckOut.$$ | grep 'TAG: fbsd-' | awk '{print $2}'`"
-     rm /tmp/.updateCheckOut.$$
-     nice pc-updatemanager install $tag >/var/log/pc-updatemanager-auto.log 2>/var/log/pc-updatemanager-auto.log
-     exit 0
-  fi
-  rm /tmp/.updateCheckOut.$$
-}
-
-check_security()
-{
-  pc-updatemanager check >/dev/null 2>/dev/null
-  rtn=$?
-  if [ $rtn -eq 150 -o $rtn -eq 152 ] ; then
-     sleep $waittime
-     # We have a minor update! Lets start it now
-     if [ "$1" = "pkgs" ] ; then
-       nice pc-updatemanager fbsdupdatepkgs >/var/log/pc-updatemanager-auto.log 2>/var/log/pc-updatemanager-auto.log
-     else
-       nice pc-updatemanager fbsdupdate >/var/log/pc-updatemanager-auto.log 2>/var/log/pc-updatemanager-auto.log
-     fi
-     exit 0
-  fi
-}
+AUTO_UPDATE="all"
 
 check_pkg()
 {
@@ -87,13 +53,7 @@ _upChk="`sed -n 's/AUTO_UPDATE: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print
 if [ -n "${_upChk}" ] ; then AUTO_UPDATE="$_upChk" ; fi
 
 case $AUTO_UPDATE in
-           all) check_major 
-                check_security 
-                check_pkg ;;
-      security) check_security ;;
-   securitypkg) check_security "pkgs"
-                check_pkg ;;
-           pkg) check_pkg ;;
+           all) check_pkg ;;
       disabled) # Do nothing
                 ;;
    *) echo "Invalid AUTO_UPDATE setting detected! Please fix /usr/local/etc/trueos.conf"
