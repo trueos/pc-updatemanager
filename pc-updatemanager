@@ -1461,8 +1461,8 @@ do_lite_pkgupdate_chroot()
   # Check the ABI version of the new system, if changed we need to fallback to a full install
   NEWABI=`grep "^#define __FreeBSD_version" ${STAGEMNT}/usr/include/sys/param.h | awk '{print $3}'`
   if [ "$CURRENTABI" != "$NEWABI" ] ; then
-    echo "ABI Change detected, Old: $CURRENTABI New: $NEWABI"
-    echo "Falling back to full upgrade"
+    echo_log "ABI Change detected, Old: $CURRENTABI New: $NEWABI"
+    echo_log "Falling back to full upgrade"
     return 1
   fi
 
@@ -1509,10 +1509,10 @@ echo \"PKG_DBDIR: /var/db/pc-updatemanager/pkgdb\" >> /var/db/pc-updatemanager/.
 
 # Cleanup the old pkgs
 echo \"Removing old packages... Please wait...\"
-pkg \${PKG_CFLAG} ${PKG_FLAG} unlock -ay
+pkg-static \${PKG_CFLAG} ${PKG_FLAG} unlock -ay
 
 # Since we cant remove pkgs via repository, this will have to do
-pkg query -e '%n !~ FreeBSD-*' %o | grep -v 'ports-mgmt/pkg' | xargs pkg \${PKG_CFLAG} ${PKG_FLAG} delete -fy
+pkg-static query -e '%n !~ FreeBSD-*' %o | grep -v 'ports-mgmt/pkg' | xargs pkg \${PKG_CFLAG} ${PKG_FLAG} delete -fy
 if [ \$? -ne 0 ] ; then
   echo \"WARNING: Failed removing old packages...\"
 fi
