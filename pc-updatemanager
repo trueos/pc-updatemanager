@@ -962,10 +962,10 @@ update_pkgs_only()
   fi
 
   # Make sure we have base system packages installed
-  pkg info | grep -q "^FreeBSD-"
+  pkg-static info | grep -q "^FreeBSD-"
   if [ $? -ne 0 ] ; then
     echo "Boot-strapping package base..."
-    pkg install -yfg 'FreeBSD-*'
+    pkg-static install -yfg 'FreeBSD-*'
   fi
 
   touch_updateinprogress
@@ -1168,7 +1168,7 @@ EOF
 build_pkg_list()
 {
   # Check if any packages are locked and bail if so
-  pkg lock --has-locked-packages >/dev/null 2>/dev/null
+  pkg-static lock --has-locked-packages >/dev/null 2>/dev/null
   if [ $? -eq 0 ] ; then
     if [ -e "/usr/local/bin/pc-systemflag" ] ; then
       pc-systemflag PKGUPDATE ERROR
@@ -1177,7 +1177,7 @@ build_pkg_list()
   fi
 
   # Figure out which base to install
-  pkg info -e trueos-desktop
+  pkg-static info -e trueos-desktop
   if [ $? -eq 0 -o -e "/etc/defaults/trueos-desktop" ] ; then
      SYSBASE="misc/trueos-desktop"
   else
@@ -1441,10 +1441,10 @@ do_lite_pkgupdate_chroot()
   echo "PKG_DBDIR: /var/db/pc-updatemanager/pkgdb" >> ${STAGEMNT}/var/db/pc-updatemanager/.pkgUpdate.conf
 
   echo_log "Starting pkg upgrade..."
-  rc_halt_cleanup "chroot ${STAGEMNT} pkg unlock -ay" 2>&1 | tee -a ${LOGOUT}
+  rc_halt_cleanup "chroot ${STAGEMNT} pkg-static unlock -ay" 2>&1 | tee -a ${LOGOUT}
 
-  echo_log "Running: pkg upgrade -U -y"
-  chroot ${STAGEMNT} pkg ${PKG_CFLAG} ${PKG_FLAG} upgrade -U -y 2>&1 | tee -a ${LOGOUT} | tee -a ${LOGOUT}.tmp
+  echo_log "Running: pkg-static upgrade -U -y"
+  chroot ${STAGEMNT} pkg-static ${PKG_CFLAG} ${PKG_FLAG} upgrade -U -y 2>&1 | tee -a ${LOGOUT} | tee -a ${LOGOUT}.tmp
   _err=$?
   if [ $_err -ne 0 ] ; then
     rm ${LOGOUT}.tmp
@@ -1487,7 +1487,7 @@ prep_pkgs_chroot()
   # If moving to a new world, boot-strap the package base
   if [ "$1" = "world" ] ; then
     echo "Boot-strapping package base..."
-    pkg -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} install -yfg 'FreeBSD-*'
+    pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} install -yfg 'FreeBSD-*'
     if [ $? -ne 0 ] ; then
       echo "FAILED INSTALLING world base packages"
       exit 1
@@ -1512,7 +1512,7 @@ echo \"Removing old packages... Please wait...\"
 pkg-static \${PKG_CFLAG} ${PKG_FLAG} unlock -ay
 
 # Since we cant remove pkgs via repository, this will have to do
-pkg-static query -e '%n !~ FreeBSD-*' %o | grep -v 'ports-mgmt/pkg' | xargs pkg \${PKG_CFLAG} ${PKG_FLAG} delete -fy
+pkg-static query -e '%n !~ FreeBSD-*' %o | grep -v 'ports-mgmt/pkg' | xargs pkg-static \${PKG_CFLAG} ${PKG_FLAG} delete -fy
 if [ \$? -ne 0 ] ; then
   echo \"WARNING: Failed removing old packages...\"
 fi
@@ -1569,7 +1569,7 @@ do
   fi
 
   echo \"Installing \$pkgOrigin... \${pkgName}\"
-  pkg \${PKG_CFLAG} ${PKG_FLAG} add -f \${pkgName} 2>&1 | tee /pkg-add.log
+  pkg-static \${PKG_CFLAG} ${PKG_FLAG} add -f \${pkgName} 2>&1 | tee /pkg-add.log
   if [ \$? -ne 0 ] ; then
      echo \"Failed installing \${pkgOrigin}\"
      cat /pkg-add.log
@@ -1580,7 +1580,7 @@ done < /install-pkg-list
 rm /pkg-add.log
 
 echo \"Installing $SYSBASEORIGIN... $SYSBASEFILENAME\"
-pkg \${PKG_CFLAG} ${PKG_FLAG} add -f $SYSBASEFILENAME 2>&1 | tee /pkg-add.log
+pkg-static \${PKG_CFLAG} ${PKG_FLAG} add -f $SYSBASEFILENAME 2>&1 | tee /pkg-add.log
 if [ \$? -ne 0 ] ; then
   cat /pkg-add.log
   echo "FAILED INSTALLING $SYSBASEORIGIN"
