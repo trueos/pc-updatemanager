@@ -1685,6 +1685,9 @@ touch_reboot()
 {
    rm /tmp/.updateInProgress
    who -b >  /tmp/.rebootRequired
+   if [ -e "${NEWPKGLIST}" ] ; then
+     cat ${NEWPKGLIST} >> /tmp/.rebootRequired
+   fi
 }
 
 require_root()
