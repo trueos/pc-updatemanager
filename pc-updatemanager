@@ -152,14 +152,14 @@ INSDIR="${DBDIR}/installed"
 IGNDIR="${DBDIR}/ignored"
 
 # PKG_CMD to use
-PKG_CMD="/usr/sbin/pkg"
+PKG_CMD="/usr/local/sbin/pkg-static"
 
 # Make sure we don't keep these from system environment
 unset INJAIL PKG_FLAG
 
 # Set pkg flags for which repo we want to use
-PKG_trueos_REPO="-r trueos-major"
-PKG_BASE_REPO="-r trueos-base"
+PKG_TRUEOS_REPO="trueos-major"
+PKG_BASE_REPO="trueos-base"
 
 ISOTMP="/usr/local/tmp/trueos-update.iso"
 
