@@ -1444,12 +1444,13 @@ do_lite_pkgupdate_chroot()
   rc_halt_cleanup "chroot ${STAGEMNT} pkg-static unlock -ay" 2>&1 | tee -a ${LOGOUT}
 
   # Bad PKG, bad!
-  pkg-static delete -y javavmwrapper-2.5_2 2>/dev/null >/dev/null
+  chroot ${STAGEMNT} pkg-static ${PKG_CFLAG} ${PKG_FLAG} delete -y javavmwrapper-2.5_2 2>/dev/null >/dev/null
 
   echo_log "Running: pkg-static upgrade -U -y"
-  chroot ${STAGEMNT} pkg-static ${PKG_CFLAG} ${PKG_FLAG} upgrade -U -y 2>&1 | tee -a ${LOGOUT} | tee -a ${LOGOUT}.tmp
-  _err=$?
+  rc_nohalt "chroot ${STAGEMNT} pkg-static ${PKG_CFLAG} ${PKG_FLAG} upgrade -U -y" 2>&1 | tee -a ${LOGOUT} | tee -a ${LOGOUT}.tmp
+  _err=$STATUS
   if [ $_err -ne 0 ] ; then
+    echo_log "Failed running pkg-static upgrade -U -y"
     rm ${LOGOUT}.tmp
     return 1
   fi
@@ -1515,7 +1516,7 @@ echo \"Removing old packages... Please wait...\"
 pkg-static \${PKG_CFLAG} ${PKG_FLAG} unlock -ay
 
 # Bad PKG, bad!
-pkg-static delete -y javavmwrapper-2.5_2 2>/dev/null >/dev/null
+pkg-static \${PKG_CFLAG} ${PKG_FLAG} delete -y javavmwrapper-2.5_2 2>/dev/null >/dev/null
 
 # Since we cant remove pkgs via repository, this will have to do
 pkg-static query -e '%n !~ FreeBSD-*' %o | grep -v 'ports-mgmt/pkg' | xargs pkg-static \${PKG_CFLAG} ${PKG_FLAG} delete -fy
