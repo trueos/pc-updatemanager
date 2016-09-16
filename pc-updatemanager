@@ -1943,6 +1943,17 @@ do_prune_be()
   rm $bList
 }
 
+get_root_pool_free_space()
+{
+  local ROOTPOOL=`mount | grep 'on / ' | cut -d '/' -f 1`
+  if [ -z "$ROOTPOOL" ] ; then return ; fi
+  local freeSpace=`zpool list -Hp ${ROOTPOOL} | awk '{print $4}'`
+  if [ ! $(is_num "$freeSpace") ] ; then return ; fi
+  # Convert freespace to Kb
+  freeSpace=`expr $freeSpace / 1024 2>/dev/null`
+  echo "$freeSpace"
+}
+
 if [ "`id -u`" = "0" ] ; then
   # Make the installed directory for this version
   if [ ! -d "${INSDIR}/${SYSVER}" ] ; then mkdir -p ${INSDIR}/${SYSVER} ; fi
