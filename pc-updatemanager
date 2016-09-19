@@ -1424,6 +1424,11 @@ mount_stage_be()
     rc_halt_cleanup "cp $NEWPKGLIST ${STAGEMNT}/install-pkg-list"
   fi
   rc_halt_cleanup "mount -t devfs devfs ${STAGEMNT}/dev"
+
+  # Copy over Xorg.0.log since we probe that file on trueos-desktop
+  if [ -e "/var/log/Xorg.0.log" ] ; then
+    rc_halt_cleanup "cp /var/log/Xorg.0.log ${STAGEMNT}/var/log/Xorg.0.log"
+  fi
 }
 
 do_lite_pkgupdate_chroot()
@@ -1651,6 +1656,12 @@ umount_stage_be()
 
   # Now cleanup / unmount
   rc_halt "umount -f ${STAGEMNT}/dev"
+
+  # Remove old Xorg.0.log
+  if [ -e "${STAGEMNT}/var/log/Xorg.0.log" ] ; then
+    rm ${STAGEMNT}/var/log/Xorg.0.log
+  fi
+
   rc_halt "beadm umount -f ${STAGEBE}"
 }
 
