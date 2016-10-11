@@ -1356,6 +1356,9 @@ prep_rc_script_install()
   rc_halt_cleanup "chroot ${STAGEMNT} mv /etc/rc /etc/rc-orig"
   rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/proc"
   rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/sys"
+  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/usr"
+  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/dev"
+  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/run"
   rc_halt_cleanup "cp ${PROGDIR}/rc-update ${STAGEMNT}/etc/rc"
   rc_halt_cleanup "cp ${PROGDIR}/rc-update ${STAGEMNT}/etc/rc-update"
   rc_halt_cleanup "cp ${PROGDIR}/rc-doupdate ${STAGEMNT}/etc/rc-doupdate"
@@ -1482,6 +1485,13 @@ do_lite_pkgupdate_chroot()
   mv ${STAGEMNT}/var/db/pkg ${STAGEMNT}/var/db/pkg.preUpgrade
   mv ${STAGEMNT}/var/db/pc-updatemanager/pkgdb ${STAGEMNT}/var/db/pkg
 
+  # Boot gets cranky if these go away
+  mkdir -p ${STAGEMNT}/compat/linux/proc 2>/dev/null
+  mkdir -p ${STAGEMNT}/compat/linux/sys 2>/dev/null
+  mkdir -p ${STAGEMNT}/compat/linux/usr 2>/dev/null
+  mkdir -p ${STAGEMNT}/compat/linux/dev 2>/dev/null
+  mkdir -p ${STAGEMNT}/compat/linux/run 2>/dev/null
+
   rm ${LOGOUT}.tmp
   return 0
 }
@@ -1570,6 +1580,8 @@ rm -rf /compat/linux
 mkdir -p /compat/linux/proc
 mkdir -p /compat/linux/sys
 mkdir -p /compat/linux/usr
+mkdir -p /compat/linux/dev
+mkdir -p /compat/linux/run
 ln -s /usr/home /compat/linux/usr/home
 
 while read pkgLine
