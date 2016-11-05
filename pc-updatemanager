@@ -179,6 +179,7 @@ OPENRC_BOOT_SERV="${OPENRC_BOOT_SERV} root savecore staticroute swap syscons sys
 OPENRC_DEFAULT_SERV="local netmount"
 OPENRC_SHUTDOWN_SERV="savecache"
 OPENRC_NONET_SERV="local"
+export OPENRC_BOOT_SERV OPENRC_DEFAULT_SERV OPENRC_SHUTDOWN_SERV OPENRC_NONET_SERV
 
 ######################################################################
 # Done with config values
@@ -1519,25 +1520,6 @@ do_lite_pkgupdate_chroot()
     rm ${LOGOUT}.tmp
     return 1
   fi
-
-  # Enable OpenRC Services
-  for serv in ${OPENRC_BOOT_SERV}
-  do
-     chroot ${STAGEMNT} rc-update add $serv boot
-  done
-  for serv in ${OPENRC_DEFAULT_SERV}
-  do
-     chroot ${STAGEMNT} rc-update add $serv default
-  done
-  for serv in ${OPENRC_SHUTDOWN_SERV}
-  do
-     chroot ${STAGEMNT} rc-update add $serv shutdown
-  done
-  for serv in ${OPENRC_NONET_SERV}
-  do
-     chroot ${STAGEMNT} rc-update add $serv nonetwork
-  done
-
   # Looks like the upgrade was good! Lets move back the PKG repo
   echo_log "Moving updated pkg repo..."
   rm -rf ${STAGEMNT}/var/db/pkg.preUpgrade 2>/dev/null
@@ -1558,6 +1540,26 @@ do_lite_pkgupdate_chroot()
   mkdir -p ${STAGEMNT}/etc/runlevels/nonetwork
   mkdir -p ${STAGEMNT}/etc/runlevels/shutdown
   mkdir -p ${STAGEMNT}/etc/runlevels/sysinit
+  mkdir -p ${STAGEMNT}/libexec/rc/init.d
+
+  # Enable OpenRC Services
+  for serv in ${OPENRC_BOOT_SERV}
+  do
+     chroot ${STAGEMNT} rc-update add $serv boot
+  done
+  for serv in ${OPENRC_DEFAULT_SERV}
+  do
+     chroot ${STAGEMNT} rc-update add $serv default
+  done
+  for serv in ${OPENRC_SHUTDOWN_SERV}
+  do
+     chroot ${STAGEMNT} rc-update add $serv shutdown
+  done
+  for serv in ${OPENRC_NONET_SERV}
+  do
+     chroot ${STAGEMNT} rc-update add $serv nonetwork
+  done
+
 
   rm ${LOGOUT}.tmp
   return 0
@@ -1656,6 +1658,7 @@ mkdir -p /etc/runlevels/default 2>/dev/null
 mkdir -p /etc/runlevels/nonetwork 2>/dev/null
 mkdir -p /etc/runlevels/shutdown 2>/dev/null
 mkdir -p /etc/runlevels/sysinit 2>/dev/null
+mkdir -p /libexec/rc/init.d 2>/dev/null
 
 while read pkgLine
 do
@@ -1697,19 +1700,19 @@ fi
 # Enable OpenRC Services
 for serv in ${OPENRC_BOOT_SERV}
 do
-   rc-update add $serv boot
+   rc-update add \$serv boot
 done
 for serv in ${OPENRC_DEFAULT_SERV}
 do
-   rc-update add $serv default
+   rc-update add \$serv default
 done
 for serv in ${OPENRC_SHUTDOWN_SERV}
 do
-   rc-update add $serv shutdown
+   rc-update add \$serv shutdown
 done
 for serv in ${OPENRC_NONET_SERV}
 do
-   rc-update add $serv nonetwork
+   rc-update add \$serv nonetwork
 done
 
 echo \"Moving updated pkg repo...\"
