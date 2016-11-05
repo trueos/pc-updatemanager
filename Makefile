@@ -34,6 +34,7 @@ install_scripts: first FORCE
 	-$(INSTALL_FILE) pc-autoupdate $(INSTALL_ROOT)$(PREFIX)/bin/
 	-$(INSTALL_FILE) rc-update $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/
 	-$(INSTALL_FILE) rc-doupdate $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/
+	-$(INSTALL_FILE) fbsd-dist.pub $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/
 
 
 uninstall_scripts:  FORCE

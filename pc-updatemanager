@@ -170,6 +170,8 @@ LOGOUT="/var/log/pc-updatemanager.log"
 PKGUPDATERTN=100
 UPDATEOTHERRTN=125
 
+ETC_DISTUPGRADE="./etc/rc ./etc/rc.shutdown ./etc/rc.devd ./etc/init.d"
+
 ######################################################################
 # Done with config values
 ######################################################################
@@ -1224,6 +1226,28 @@ dl_pkgs()
   if [ -e "$NEWPKGLIST" ] ; then rm $NEWPKGLIST; fi
   touch ${NEWPKGLIST}
 
+  # Get the URL for the base packages
+  BPURL=$(cat /usr/local/etc/pkg/repos/trueos-base.conf | grep 'url:' | awk '{print $2}' | cut -d '"' -f 2)
+
+  # Fetch the fbsd-distrib.txz file
+  fetch -o ${REALPKGDLCACHE}/fbsd-distrib.txz "${BPURL}/fbsd-distrib.txz"
+  if [ $? -ne 0 ] ; then
+     echo_log "Failed downloading fbsd-distrib.txz" >> ${PKGUPGRADELOG}
+     exit_err "Failed downloading fbsd-distrib.txz"
+  fi
+  fetch -o ${REALPKGDLCACHE}/fbsd-distrib.txz.sha1 "${BPURL}/fbsd-distrib.txz.sha1"
+  if [ $? -ne 0 ] ; then
+     echo_log "Failed downloading fbsd-distrib.txz.sha1" >> ${PKGUPGRADELOG}
+     exit_err "Failed downloading fbsd-distrib.txz.shg1"
+  fi
+
+  # Verify Signature of the fbsd-distrib file
+  openssl dgst -sha1 -verify /usr/local/share/trueos/pc-updatemanager/fbsd-dist.pub  -signature ${REALPKGDLCACHE}/fbsd-distrib.txz.sha1 ${REALPKGDLCACHE}/fbsd-distrib.txz
+  if [ $? -ne 0 ] ; then
+     echo_log "Failed verification of fbsd-distrib.txz" >> ${PKGUPGRADELOG}
+     exit_err "Failed verification of fbsd-distrib.txz"
+  fi
+
   # Save the PKGNG filename
   PKGFILENAME="`${PKG_CMD} ${PKG_FLAG} rquery -U '%n-%v' ports-mgmt/pkg 2>/dev/null | head -n 1`.txz"
 
@@ -1476,6 +1500,15 @@ do_lite_pkgupdate_chroot()
   if [ "$CURRENTABI" != "$NEWABI" ] ; then
     echo_log "ABI Change detected, Old: $CURRENTABI New: $NEWABI"
     echo_log "Falling back to full upgrade"
+    return 1
+  fi
+
+  # Update some of the etc files from 'make distribution'
+  echo_log "Extracting distribution files..."
+  tar xvpf ${REALPKGDLCACHE}/fbsd-distrib.txz -C ${STAGEMNT} ${ETC_DISTUPGRADE}
+  if [ $? -ne 0 ] ; then
+    echo_log "Failed extracting distribution files"
+    rm ${LOGOUT}.tmp
     return 1
   fi
 

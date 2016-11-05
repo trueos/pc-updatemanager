@@ -4,5 +4,6 @@ etc/pcupdate.d/post/README
 etc/pcupdate.d/pre/README
 share/trueos/pc-updatemanager/conf/security.key
 share/trueos/pc-updatemanager/conf/sysupdate.conf
+share/trueos/pc-updatemanager/fbsd-dist.pub
 share/trueos/pc-updatemanager/rc-doupdate
 share/trueos/pc-updatemanager/rc-update
