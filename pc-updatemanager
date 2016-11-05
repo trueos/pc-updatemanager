@@ -990,7 +990,7 @@ update_pkgs_only()
   run_update_pre "PKG"
   mk_pkg_conf "stage1"
   build_pkg_list
-  dl_pkgs "pkg"
+  dl_pkgs "world"
 
   prep_update_shutdown "update_pkgs_only"
 }
