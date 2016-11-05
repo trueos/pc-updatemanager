@@ -1571,14 +1571,12 @@ prep_pkgs_chroot()
   PACKAGE_BUILDING="YES"
   export PACKAGE_BUILDING
 
-  # If moving to a new world, boot-strap the package base
-  if [ "$1" = "world" ] ; then
-    echo "Boot-strapping package base..."
-    pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} install -yfg 'FreeBSD-*'
-    if [ $? -ne 0 ] ; then
-      echo "FAILED INSTALLING world base packages"
-      exit 1
-    fi
+  # Always install the latest base system packages
+  echo "Boot-strapping package base..."
+  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} install -yfg 'FreeBSD-*'
+  if [ $? -ne 0 ] ; then
+    echo "FAILED INSTALLING world base packages"
+    exit 1
   fi
 
   # Next create the script to bootstrap pkgng
