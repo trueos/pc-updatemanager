@@ -101,7 +101,7 @@ do_self_bootstrap() {
 }
 
 # Check if we need to try a self-update
-if [ -z "$DISABLE_UPDATE_BOOTSTRAP" ] ; then
+if [ -z "$DISABLE_UPDATE_BOOTSTRAP" -a "$1" != "doshutdownupdate"] ; then
   export DISABLE_UPDATE_BOOTSTRAP="YES"
 
   do_self_bootstrap
