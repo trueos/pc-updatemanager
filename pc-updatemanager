@@ -170,7 +170,15 @@ LOGOUT="/var/log/pc-updatemanager.log"
 PKGUPDATERTN=100
 UPDATEOTHERRTN=125
 
-ETC_DISTUPGRADE="./etc/rc ./etc/rc.shutdown ./etc/rc.devd ./etc/init.d"
+# OpenRC Updates
+ETC_DISTUPGRADE="./etc/rc ./etc/rc.shutdown ./etc/rc.devd"
+
+# Default OpenRC Services to enable
+OPENRC_BOOT_SERV="adjkerntz bootmisc dumpon fsck hostid hostname localmount loopback modules motd network newsyslog"
+OPENRC_BOOT_SERV="${OPENRC_BOOT_SERV} root savecore staticroute swap syscons sysctl syslogd urandom zfs zvol "
+OPENRC_DEFAULT_SERV="local netmount"
+OPENRC_SHUTDOWN_SERV="savecache"
+OPENRC_NONET_SERV="local"
 
 ######################################################################
 # Done with config values
@@ -1512,6 +1520,24 @@ do_lite_pkgupdate_chroot()
     return 1
   fi
 
+  # Enable OpenRC Services
+  for serv in ${OPENRC_BOOT_SERV}
+  do
+     chroot ${STAGEMNT} rc-update add $serv boot
+  done
+  for serv in ${OPENRC_DEFAULT_SERV}
+  do
+     chroot ${STAGEMNT} rc-update add $serv default
+  done
+  for serv in ${OPENRC_SHUTDOWN_SERV}
+  do
+     chroot ${STAGEMNT} rc-update add $serv shutdown
+  done
+  for serv in ${OPENRC_NONET_SERV}
+  do
+     chroot ${STAGEMNT} rc-update add $serv nonetwork
+  done
+
   # Looks like the upgrade was good! Lets move back the PKG repo
   echo_log "Moving updated pkg repo..."
   rm -rf ${STAGEMNT}/var/db/pkg.preUpgrade 2>/dev/null
@@ -1524,6 +1550,14 @@ do_lite_pkgupdate_chroot()
   mkdir -p ${STAGEMNT}/compat/linux/usr 2>/dev/null
   mkdir -p ${STAGEMNT}/compat/linux/dev 2>/dev/null
   mkdir -p ${STAGEMNT}/compat/linux/run 2>/dev/null
+
+  # Make sure the various openrc dirs exist
+  mkdir -p ${STAGEMNT}/etc/runlevels
+  mkdir -p ${STAGEMNT}/etc/runlevels/boot
+  mkdir -p ${STAGEMNT}/etc/runlevels/default
+  mkdir -p ${STAGEMNT}/etc/runlevels/nonetwork
+  mkdir -p ${STAGEMNT}/etc/runlevels/shutdown
+  mkdir -p ${STAGEMNT}/etc/runlevels/sysinit
 
   rm ${LOGOUT}.tmp
   return 0
@@ -1617,6 +1651,14 @@ mkdir -p /compat/linux/dev
 mkdir -p /compat/linux/run
 ln -s /usr/home /compat/linux/usr/home
 
+# Make sure the various openrc dirs exist
+mkdir -p /etc/runlevels 2>/dev/null
+mkdir -p /etc/runlevels/boot 2>/dev/null
+mkdir -p /etc/runlevels/default 2>/dev/null
+mkdir -p /etc/runlevels/nonetwork 2>/dev/null
+mkdir -p /etc/runlevels/shutdown 2>/dev/null
+mkdir -p /etc/runlevels/sysinit 2>/dev/null
+
 while read pkgLine
 do
   pkgOrigin=\"\`echo \$pkgLine | cut -d ' ' -f 1\`\"
@@ -1645,6 +1687,32 @@ if [ \$? -ne 0 ] ; then
   echo "FAILED INSTALLING $SYSBASEORIGIN"
   exit 1
 fi
+
+# Update some of the etc files from make distribution
+echo \"Extracting distribution files...\"
+tar xvpf ${REALPKGDLCACHE}/fbsd-distrib.txz -C / ${ETC_DISTUPGRADE}
+if [ $? -ne 0 ] ; then
+  echo \"Failed extracting distribution files\"
+  exit 1
+fi
+
+# Enable OpenRC Services
+for serv in ${OPENRC_BOOT_SERV}
+do
+   rc-update add $serv boot
+done
+for serv in ${OPENRC_DEFAULT_SERV}
+do
+   rc-update add $serv default
+done
+for serv in ${OPENRC_SHUTDOWN_SERV}
+do
+   rc-update add $serv shutdown
+done
+for serv in ${OPENRC_NONET_SERV}
+do
+   rc-update add $serv nonetwork
+done
 
 echo \"Moving updated pkg repo...\"
 rm -rf /var/db/pkg.preUpgrade 2>/dev/null
