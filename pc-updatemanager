@@ -1227,7 +1227,7 @@ dl_pkgs()
 
   # Clean pkgs
   echo_log "Cleaning old pkg upgrade cache..."
-  #${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} clean -y >/dev/null 2>/dev/null
+  ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} clean -y >/dev/null 2>/dev/null
   sync
   sleep 2
 
