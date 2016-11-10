@@ -101,7 +101,12 @@ do_self_bootstrap() {
 }
 
 # Check if we need to try a self-update
-if [ -z "$DISABLE_UPDATE_BOOTSTRAP" -a "$1" != "doshutdownupdate"] ; then
+if [ -z "$1" ] ; then
+  CHKARG="doshutdownupdate"
+else
+  CHKARG="$1"
+fi
+if [ -z "$DISABLE_UPDATE_BOOTSTRAP" -a "$CHKARG" != "doshutdownupdate"] ; then
   export DISABLE_UPDATE_BOOTSTRAP="YES"
 
   do_self_bootstrap
@@ -1512,14 +1517,6 @@ do_lite_pkgupdate_chroot()
     return 1
   fi
 
-  # Update some of the etc files from 'make distribution'
-  echo_log "Extracting distribution files..."
-  tar xvpf ${REALPKGDLCACHE}/fbsd-distrib.txz -C ${STAGEMNT} ${ETC_DISTUPGRADE}
-  if [ $? -ne 0 ] ; then
-    echo_log "Failed extracting distribution files"
-    rm ${LOGOUT}.tmp
-    return 1
-  fi
   # Looks like the upgrade was good! Lets move back the PKG repo
   echo_log "Moving updated pkg repo..."
   rm -rf ${STAGEMNT}/var/db/pkg.preUpgrade 2>/dev/null
@@ -1533,32 +1530,44 @@ do_lite_pkgupdate_chroot()
   mkdir -p ${STAGEMNT}/compat/linux/dev 2>/dev/null
   mkdir -p ${STAGEMNT}/compat/linux/run 2>/dev/null
 
-  # Make sure the various openrc dirs exist
-  mkdir -p ${STAGEMNT}/etc/runlevels
-  mkdir -p ${STAGEMNT}/etc/runlevels/boot
-  mkdir -p ${STAGEMNT}/etc/runlevels/default
-  mkdir -p ${STAGEMNT}/etc/runlevels/nonetwork
-  mkdir -p ${STAGEMNT}/etc/runlevels/shutdown
-  mkdir -p ${STAGEMNT}/etc/runlevels/sysinit
-  mkdir -p ${STAGEMNT}/libexec/rc/init.d
+  if [ -e "${STAGEMNT}/etc/init.d" ] ; then
 
-  # Enable OpenRC Services
-  for serv in ${OPENRC_BOOT_SERV}
-  do
-     chroot ${STAGEMNT} rc-update add $serv boot
-  done
-  for serv in ${OPENRC_DEFAULT_SERV}
-  do
-     chroot ${STAGEMNT} rc-update add $serv default
-  done
-  for serv in ${OPENRC_SHUTDOWN_SERV}
-  do
-     chroot ${STAGEMNT} rc-update add $serv shutdown
-  done
-  for serv in ${OPENRC_NONET_SERV}
-  do
-     chroot ${STAGEMNT} rc-update add $serv nonetwork
-  done
+    # Update some of the etc files from 'make distribution'
+    echo_log "Extracting distribution files..."
+    tar xvpf ${REALPKGDLCACHE}/fbsd-distrib.txz -C ${STAGEMNT} ${ETC_DISTUPGRADE}
+    if [ $? -ne 0 ] ; then
+      echo_log "Failed extracting distribution files"
+      rm ${LOGOUT}.tmp
+      return 1
+    fi
+
+    # Make sure the various openrc dirs exist
+    mkdir -p ${STAGEMNT}/etc/runlevels
+    mkdir -p ${STAGEMNT}/etc/runlevels/boot
+    mkdir -p ${STAGEMNT}/etc/runlevels/default
+    mkdir -p ${STAGEMNT}/etc/runlevels/nonetwork
+    mkdir -p ${STAGEMNT}/etc/runlevels/shutdown
+    mkdir -p ${STAGEMNT}/etc/runlevels/sysinit
+    mkdir -p ${STAGEMNT}/libexec/rc/init.d
+
+    # Enable OpenRC Services
+    for serv in ${OPENRC_BOOT_SERV}
+    do
+       chroot ${STAGEMNT} rc-update add $serv boot
+    done
+    for serv in ${OPENRC_DEFAULT_SERV}
+    do
+       chroot ${STAGEMNT} rc-update add $serv default
+    done
+    for serv in ${OPENRC_SHUTDOWN_SERV}
+    do
+       chroot ${STAGEMNT} rc-update add $serv shutdown
+    done
+    for serv in ${OPENRC_NONET_SERV}
+    do
+       chroot ${STAGEMNT} rc-update add $serv nonetwork
+    done
+  fi
 
 
   rm ${LOGOUT}.tmp
@@ -1651,15 +1660,6 @@ mkdir -p /compat/linux/dev
 mkdir -p /compat/linux/run
 ln -s /usr/home /compat/linux/usr/home
 
-# Make sure the various openrc dirs exist
-mkdir -p /etc/runlevels 2>/dev/null
-mkdir -p /etc/runlevels/boot 2>/dev/null
-mkdir -p /etc/runlevels/default 2>/dev/null
-mkdir -p /etc/runlevels/nonetwork 2>/dev/null
-mkdir -p /etc/runlevels/shutdown 2>/dev/null
-mkdir -p /etc/runlevels/sysinit 2>/dev/null
-mkdir -p /libexec/rc/init.d 2>/dev/null
-
 while read pkgLine
 do
   pkgOrigin=\"\`echo \$pkgLine | cut -d ' ' -f 1\`\"
@@ -1689,31 +1689,43 @@ if [ \$? -ne 0 ] ; then
   exit 1
 fi
 
-# Update some of the etc files from make distribution
-echo \"Extracting distribution files...\"
-tar xvpf ${REALPKGDLCACHE}/fbsd-distrib.txz -C / ${ETC_DISTUPGRADE}
-if [ $? -ne 0 ] ; then
-  echo \"Failed extracting distribution files\"
-  exit 1
-fi
+if [ -e \"/etc/init.d\" ] ; then
 
-# Enable OpenRC Services
-for serv in ${OPENRC_BOOT_SERV}
-do
-   rc-update add \$serv boot
-done
-for serv in ${OPENRC_DEFAULT_SERV}
-do
-   rc-update add \$serv default
-done
-for serv in ${OPENRC_SHUTDOWN_SERV}
-do
-   rc-update add \$serv shutdown
-done
-for serv in ${OPENRC_NONET_SERV}
-do
-   rc-update add \$serv nonetwork
-done
+  # Make sure the various openrc dirs exist
+  mkdir -p /etc/runlevels 2>/dev/null
+  mkdir -p /etc/runlevels/boot 2>/dev/null
+  mkdir -p /etc/runlevels/default 2>/dev/null
+  mkdir -p /etc/runlevels/nonetwork 2>/dev/null
+  mkdir -p /etc/runlevels/shutdown 2>/dev/null
+  mkdir -p /etc/runlevels/sysinit 2>/dev/null
+  mkdir -p /libexec/rc/init.d 2>/dev/null
+
+  # Update some of the etc files from make distribution
+  echo \"Extracting distribution files...\"
+  tar xvpf ${REALPKGDLCACHE}/fbsd-distrib.txz -C / ${ETC_DISTUPGRADE}
+  if [ $? -ne 0 ] ; then
+    echo \"Failed extracting distribution files\"
+    exit 1
+  fi
+
+  # Enable OpenRC Services
+  for serv in ${OPENRC_BOOT_SERV}
+  do
+     rc-update add \$serv boot
+  done
+  for serv in ${OPENRC_DEFAULT_SERV}
+  do
+     rc-update add \$serv default
+  done
+  for serv in ${OPENRC_SHUTDOWN_SERV}
+  do
+     rc-update add \$serv shutdown
+  done
+  for serv in ${OPENRC_NONET_SERV}
+  do
+     rc-update add \$serv nonetwork
+  done
+fi
 
 echo \"Moving updated pkg repo...\"
 rm -rf /var/db/pkg.preUpgrade 2>/dev/null
