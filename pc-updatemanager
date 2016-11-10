@@ -106,7 +106,7 @@ if [ -z "$1" ] ; then
 else
   CHKARG="$1"
 fi
-if [ -z "$DISABLE_UPDATE_BOOTSTRAP" -a "$CHKARG" != "doshutdownupdate"] ; then
+if [ -z "$DISABLE_UPDATE_BOOTSTRAP" -a "$CHKARG" != "doshutdownupdate" ] ; then
   export DISABLE_UPDATE_BOOTSTRAP="YES"
 
   do_self_bootstrap
