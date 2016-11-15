@@ -101,12 +101,8 @@ do_self_bootstrap() {
 }
 
 # Check if we need to try a self-update
-if [ -z "$1" ] ; then
-  CHKARG="doshutdownupdate"
-else
-  CHKARG="$1"
-fi
-if [ -z "$DISABLE_UPDATE_BOOTSTRAP" -a "$CHKARG" != "doshutdownupdate" ] ; then
+if [ -z "$DISABLE_UPDATE_BOOTSTRAP" -a -n "${1}" -a "${1}" != "doshutdownupdate" ] ; then
+
   export DISABLE_UPDATE_BOOTSTRAP="YES"
 
   do_self_bootstrap
@@ -1221,6 +1217,8 @@ build_pkg_list()
 
 dl_pkgs()
 {
+  unset OBSOLETE_PACKAGES
+
   # Make sure PKG itself is upgraded
   echo_log "Checking for updates to ports-mgmt/pkg.."
   ${PKG_CMD} upgrade -y ports-mgmt/pkg
@@ -1334,6 +1332,7 @@ dl_pkgs()
     unset FETCHFILENAME
     FETCHFILENAME="`${PKG_CMD} ${PKG_FLAG} rquery -U '%n-%v' $pkgOrigin 2>/dev/null | head -n 1`"
     if [ -z "$FETCHFILENAME" ] ; then
+       OBSOLETE_PACKAGES="${pkgOrigin} ${OBSOLETE_PACKAGES}"
        echo_log "*****"
        echo_log "No such package in new repo: $pkgOrigin"
        echo "*****" >> $PKGUPGRADELOG
