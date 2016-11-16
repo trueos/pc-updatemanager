@@ -175,9 +175,9 @@ UPDATEOTHERRTN=125
 ETC_DISTUPGRADE="./etc/rc ./etc/rc.shutdown ./etc/rc.devd"
 
 # Default OpenRC Services to enable
-OPENRC_BOOT_SERV="adjkerntz bootmisc dumpon fsck hostid hostname localmount loopback modules motd network newsyslog"
+OPENRC_BOOT_SERV="bootmisc dumpon fsck hostid hostname localmount loopback modules motd network newsyslog"
 OPENRC_BOOT_SERV="${OPENRC_BOOT_SERV} root savecore staticroute swap syscons sysctl syslogd urandom zfs zvol "
-OPENRC_DEFAULT_SERV="local netmount"
+OPENRC_DEFAULT_SERV="adjkerntz local netmount"
 OPENRC_SHUTDOWN_SERV="savecache"
 OPENRC_NONET_SERV="local"
 export OPENRC_BOOT_SERV OPENRC_DEFAULT_SERV OPENRC_SHUTDOWN_SERV OPENRC_NONET_SERV
