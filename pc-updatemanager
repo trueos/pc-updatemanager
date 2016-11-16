@@ -1541,13 +1541,13 @@ do_lite_pkgupdate_chroot()
     fi
 
     # Make sure the various openrc dirs exist
-    mkdir -p ${STAGEMNT}/etc/runlevels
-    mkdir -p ${STAGEMNT}/etc/runlevels/boot
-    mkdir -p ${STAGEMNT}/etc/runlevels/default
-    mkdir -p ${STAGEMNT}/etc/runlevels/nonetwork
-    mkdir -p ${STAGEMNT}/etc/runlevels/shutdown
-    mkdir -p ${STAGEMNT}/etc/runlevels/sysinit
-    mkdir -p ${STAGEMNT}/libexec/rc/init.d
+    mkdir -p ${STAGEMNT}/etc/runlevels 2>/dev/null
+    mkdir -p ${STAGEMNT}/etc/runlevels/boot 2>/dev/null
+    mkdir -p ${STAGEMNT}/etc/runlevels/default 2>/dev/null
+    mkdir -p ${STAGEMNT}/etc/runlevels/nonetwork 2>/dev/null
+    mkdir -p ${STAGEMNT}/etc/runlevels/shutdown 2>/dev/null
+    mkdir -p ${STAGEMNT}/etc/runlevels/sysinit 2>/dev/null
+    mkdir -p ${STAGEMNT}/libexec/rc/init.d 2>/dev/null
 
     # Enable OpenRC Services
     for serv in ${OPENRC_BOOT_SERV}
@@ -1659,6 +1659,15 @@ mkdir -p /compat/linux/dev
 mkdir -p /compat/linux/run
 ln -s /usr/home /compat/linux/usr/home
 
+# Make sure the various openrc dirs exist
+mkdir -p /etc/runlevels 2>/dev/null
+mkdir -p /etc/runlevels/boot 2>/dev/null
+mkdir -p /etc/runlevels/default 2>/dev/null
+mkdir -p /etc/runlevels/nonetwork 2>/dev/null
+mkdir -p /etc/runlevels/shutdown 2>/dev/null
+mkdir -p /etc/runlevels/sysinit 2>/dev/null
+mkdir -p /libexec/rc/init.d 2>/dev/null
+
 while read pkgLine
 do
   pkgOrigin=\"\`echo \$pkgLine | cut -d ' ' -f 1\`\"
@@ -1689,15 +1698,6 @@ if [ \$? -ne 0 ] ; then
 fi
 
 if [ -e \"/etc/init.d\" ] ; then
-
-  # Make sure the various openrc dirs exist
-  mkdir -p /etc/runlevels 2>/dev/null
-  mkdir -p /etc/runlevels/boot 2>/dev/null
-  mkdir -p /etc/runlevels/default 2>/dev/null
-  mkdir -p /etc/runlevels/nonetwork 2>/dev/null
-  mkdir -p /etc/runlevels/shutdown 2>/dev/null
-  mkdir -p /etc/runlevels/sysinit 2>/dev/null
-  mkdir -p /libexec/rc/init.d 2>/dev/null
 
   # Update some of the etc files from make distribution
   echo \"Extracting distribution files...\"
