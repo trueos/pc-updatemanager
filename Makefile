@@ -56,8 +56,10 @@ install_pcupdated: first FORCE
 	@$(CHK_DIR_EXISTS) $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/ || $(MKDIR) $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/
 	@$(CHK_DIR_EXISTS) $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/pre || $(MKDIR) $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/pre
 	@$(CHK_DIR_EXISTS) $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/post || $(MKDIR) $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/post
+	@$(CHK_DIR_EXISTS) $(INSTALL_ROOT)$(PREFIX)/etc/pkg/repos || $(MKDIR) $(INSTALL_ROOT)$(PREFIX)/etc/pkg/repos
 	@$(CHK_DIR_EXISTS) $(INSTALL_ROOT)$(PREFIX)/etc/pkg/fingerprints/trueos/trusted || $(MKDIR) $(INSTALL_ROOT)$(PREFIX)/etc/pkg/fingerprints/trueos/trusted
 	-$(INSTALL_FILE) certs/pkg.cdn.trueos.org.20160701 $(INSTALL_ROOT)$(PREFIX)/etc/pkg/fingerprints/trueos/trusted/
+	-$(INSTALL_FILE) repos/trueos.conf.dist $(INSTALL_ROOT)$(PREFIX)/etc/pkg/repos/
 	-$(INSTALL_FILE) pcupdate.d/pre/README $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/pre/README
 	-$(INSTALL_FILE) pcupdate.d/post/README $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/post/README
 
