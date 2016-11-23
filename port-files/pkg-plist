@@ -2,6 +2,7 @@ bin/pc-autoupdate
 bin/pc-updatemanager
 etc/pcupdate.d/post/README
 etc/pcupdate.d/pre/README
+etc/pkg/repos/trueos.conf.dist
 etc/pkg/fingerprints/trueos/trusted/pkg.cdn.trueos.org.20160701
 share/trueos/pc-updatemanager/conf/security.key
 share/trueos/pc-updatemanager/conf/sysupdate.conf
