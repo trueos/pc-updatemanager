@@ -376,6 +376,12 @@ setup_pkgng_conf() {
   ARCH=`uname -m`
   PKGVER="master"
 
+  # If using the EDGE package set, set the right path
+  case $PACKAGE_SET in
+       EDGE) PKGVER="$PKGVER/edge" ;;
+          *) ;;
+  esac
+
   # Now create standard trueos.conf file
   if [ "$PACKAGE_SET" = "CUSTOM" -a -n "$CUSTOM_URL" ] ; then
      # Change %VERSION% / %ARCH% keys
@@ -1134,9 +1140,7 @@ setup_pkgng_newrepo_conf() {
 
   # If using the EDGE package set, set the right path
   case $PACKAGE_SET in
-       EDGE) FBSDVER="$FBSDVER/edge"
-	     MAJORVER="$MAJORVER/edge"
-	     ;;
+       EDGE) PKGVER="$PKGVER/edge" ;;
           *) ;;
   esac
 
