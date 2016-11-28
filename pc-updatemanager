@@ -201,7 +201,7 @@ if [ -n "${_cdnChk}" ] ; then CDN_TYPE="$_cdnChk" ; fi
 
 # Check the PACKAGE_SET variable
 case $PACKAGE_SET in
-  ENTERPRISE|PRODUCTION|STABLE|UNSTABLE) ;;
+  ENTERPRISE|PRODUCTION|EDGE|STABLE|UNSTABLE) ;;
   CUSTOM) # Using a custom package set?
           # Lets check that we have a URL provided
 	  _urlChk="`sed -n 's/^PACKAGE_URL: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
