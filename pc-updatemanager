@@ -1769,9 +1769,12 @@ umount_stage_be()
   if [ ! -d "${STAGEMNT}/usr/local/log/pc-updatemanager" ] ; then
      mkdir -p "${STAGEMNT}/usr/local/log/pc-updatemanager"
   fi
+
+  echo_log "Copy upgrade.log to new BE..."
   rc_halt_cleanup "cp ${PKGUPGRADELOG} ${STAGEMNT}/usr/local/log/pc-updatemanager/upgrade.log"
 
   # Figure out the name of the new BE
+  echo_log "Determine new BE name..."
   nDate=`date "+%Y%m%d_%H%M%S"`
   if [ -n "$NEWFREEBSDVERSION" ] ; then
     newBEName="${NEWFREEBSDVERSION}-up-${nDate}"
