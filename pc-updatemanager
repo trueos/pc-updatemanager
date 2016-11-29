@@ -1794,12 +1794,11 @@ umount_stage_be()
   if [ -n "$NEWFREEBSDVERSION" ] ; then
     newBEName="${NEWFREEBSDVERSION}-up-${nDate}"
   else
-    beVer="`chroot ${STAGEMNT} /bin/freebsd-version`"
-    if [ -z "$beVer" ] ; then
-      beVer="`uname -r`"
-    fi
+    beVer="`uname -r`"
     newBEName="${beVer}-up-${nDate}"
   fi
+
+  echo_log "Cleanup mounts..."
 
   # Now cleanup / unmount
   rc_halt "umount -f ${STAGEMNT}/dev"
