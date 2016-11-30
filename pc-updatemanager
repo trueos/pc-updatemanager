@@ -1794,7 +1794,10 @@ umount_stage_be()
   if [ -n "$NEWFREEBSDVERSION" ] ; then
     newBEName="${NEWFREEBSDVERSION}-up-${nDate}"
   else
-    beVer="`uname -r`"
+    beVer="`chroot ${STAGEMNT} /bin/freebsd-version`"
+    if [ -z "$beVer" ] ; then
+      beVer="`uname -r`"
+    fi
     newBEName="${beVer}-up-${nDate}"
   fi
 
