@@ -171,8 +171,8 @@ LOGOUT="/var/log/pc-updatemanager.log"
 PKGUPDATERTN=100
 UPDATEOTHERRTN=125
 
-# OpenRC Updates
-ETC_DISTUPGRADE="./etc/rc ./etc/rc.shutdown ./etc/rc.devd"
+# Files to overwrite in /etc with upgrades
+ETC_DISTUPGRADE="./etc/rc ./etc/rc.shutdown ./etc/rc.devd ./etc/devd.conf"
 
 # Default OpenRC Services to enable
 OPENRC_BOOT_SERV="adjkerntz bootmisc bridge devd devfs dumpon fsck hostid hostname localmount loopback modules motd network newsyslog"
