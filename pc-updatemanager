@@ -171,8 +171,8 @@ LOGOUT="/var/log/pc-updatemanager.log"
 PKGUPDATERTN=100
 UPDATEOTHERRTN=125
 
-# OpenRC Updates
-ETC_DISTUPGRADE="./etc/rc ./etc/rc.shutdown ./etc/rc.devd"
+# Files to overwrite in /etc with upgrades
+ETC_DISTUPGRADE="./etc/rc ./etc/rc.shutdown ./etc/rc.devd ./etc/devd.conf"
 
 # Default OpenRC Services to enable
 OPENRC_BOOT_SERV="abi adjkerntz bootmisc devd dumpon fsck hostid hostname localmount loopback modules motd network newsyslog"
@@ -188,15 +188,15 @@ export OPENRC_BOOT_SERV OPENRC_DEFAULT_SERV OPENRC_SHUTDOWN_SERV OPENRC_NONET_SE
 
 # Get the PACKAGE_SET to use for this pkgng repo
 PACKAGE_SET="PRODUCTION"
-_pkgChk="`sed -n 's/PACKAGE_SET: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
+_pkgChk="`sed -n 's/^PACKAGE_SET: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
 if [ -n "${_pkgChk}" ] ; then PACKAGE_SET="$_pkgChk" ; fi
 
 AUTO_UPDATE="securitypkg"
-_upChk="`sed -n 's/AUTO_UPDATE: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
+_upChk="`sed -n 's/^AUTO_UPDATE: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
 if [ -n "${_upChk}" ] ; then AUTO_UPDATE="$_upChk" ; fi
 
 CDN_TYPE="HTTP"
-_cdnChk="`sed -n 's/CDN_TYPE: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
+_cdnChk="`sed -n 's/^CDN_TYPE: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
 if [ -n "${_cdnChk}" ] ; then CDN_TYPE="$_cdnChk" ; fi
 
 # Check the PACKAGE_SET variable
@@ -1794,7 +1794,10 @@ umount_stage_be()
   if [ -n "$NEWFREEBSDVERSION" ] ; then
     newBEName="${NEWFREEBSDVERSION}-up-${nDate}"
   else
-    beVer="`uname -r`"
+    beVer="`chroot ${STAGEMNT} /bin/freebsd-version`"
+    if [ -z "$beVer" ] ; then
+      beVer="`uname -r`"
+    fi
     newBEName="${beVer}-up-${nDate}"
   fi
 
