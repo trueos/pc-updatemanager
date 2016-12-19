@@ -1520,6 +1520,9 @@ do_lite_pkgupdate_chroot()
     return 1
   fi
 
+  # Set all pkgs as not auto-installed, so pkg autoremove doesn't touch them
+  chroot ${STAGEMNT} pkg-static ${PKG_CFLAG} ${PKG_FLAG} set -y -A 00 -g FreeBSD-\*
+
   # Looks like the upgrade was good! Lets move back the PKG repo
   echo_log "Moving updated pkg repo..."
   rm -rf ${STAGEMNT}/var/db/pkg.preUpgrade 2>/dev/null
@@ -1600,6 +1603,9 @@ prep_pkgs_chroot()
     echo "FAILED INSTALLING world base packages"
     exit 1
   fi
+
+  # Set all pkgs as not auto-installed, so pkg autoremove doesn't touch them
+  pkg -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} set -y -A 00 -g FreeBSD-\*
 
   # Next create the script to bootstrap pkgng
   echo "#!/bin/sh
