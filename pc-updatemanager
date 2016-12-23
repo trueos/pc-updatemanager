@@ -1450,8 +1450,7 @@ mk_stage_be()
   fi
 
   # Create the new stage boot environment
-  TMPNICK=`date "+%Y%m%d_%H%M%S"`
-  rc_halt "beadm create $STAGEBE ${TMPNICK}" >>${LOGOUT} 2>>${LOGOUT}
+  rc_halt "beadm create $STAGEBE" >>${LOGOUT} 2>>${LOGOUT}
 }
 
 mount_stage_be()
@@ -1825,7 +1824,6 @@ mk_stage_be_default()
   # Rename the BE
   rc_halt "beadm rename $STAGEBE $newBEName"
   # Rename the nickname
-  rc_nohalt "beadm rename -n ${TMPNICK} ${newBEName}"
   rc_halt "beadm activate $newBEName"
 
   # Only update grub if its installed
