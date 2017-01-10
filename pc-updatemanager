@@ -1541,9 +1541,9 @@ do_lite_pkgupdate_chroot()
     echo_log "Extracting distribution files..."
     tar xvpf ${REALPKGDLCACHE}/fbsd-distrib.txz -C ${STAGEMNT} ${ETC_DISTUPGRADE}
     if [ $? -ne 0 ] ; then
-      echo_log "Failed extracting distribution files"
+      echo_log "Warning: Did not extract all distribution file upgrades"
       rm ${LOGOUT}.tmp
-      return 1
+      return 0
     fi
 
     echo_log "Updating OpenRC settings..."
