@@ -2004,6 +2004,7 @@ shutdown_update() {
   echo "*****************************************************"
   echo "             Starting update process..."
   echo "      !! Please do NOT turn off the computer !!"
+  echo " All logs are stored in /var/log/pc-updatemanager.log"
   echo "             ${FKEY}"
   echo "*****************************************************"
 
