@@ -35,6 +35,7 @@ install_scripts: first FORCE
 	-$(INSTALL_FILE) pc-autoupdate $(INSTALL_ROOT)$(PREFIX)/bin/
 	-$(INSTALL_FILE) rc-update $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/
 	-$(INSTALL_FILE) rc-doupdate $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/
+	-$(INSTALL_FILE) fbsd-dist.pub $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/
 	-$(COMPRESS_MAN) pc-updatemanager.8 > $(INSTALL_ROOT)$(PREFIX)/man/man8/pc-updatemanager.8.gz
 
 
@@ -57,6 +58,10 @@ install_pcupdated: first FORCE
 	@$(CHK_DIR_EXISTS) $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/ || $(MKDIR) $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/
 	@$(CHK_DIR_EXISTS) $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/pre || $(MKDIR) $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/pre
 	@$(CHK_DIR_EXISTS) $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/post || $(MKDIR) $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/post
+	@$(CHK_DIR_EXISTS) $(INSTALL_ROOT)$(PREFIX)/etc/pkg/repos || $(MKDIR) $(INSTALL_ROOT)$(PREFIX)/etc/pkg/repos
+	@$(CHK_DIR_EXISTS) $(INSTALL_ROOT)$(PREFIX)/etc/pkg/fingerprints/trueos/trusted || $(MKDIR) $(INSTALL_ROOT)$(PREFIX)/etc/pkg/fingerprints/trueos/trusted
+	-$(INSTALL_FILE) certs/pkg.cdn.trueos.org.20160701 $(INSTALL_ROOT)$(PREFIX)/etc/pkg/fingerprints/trueos/trusted/
+	-$(INSTALL_FILE) repos/trueos.conf.dist $(INSTALL_ROOT)$(PREFIX)/etc/pkg/repos/
 	-$(INSTALL_FILE) pcupdate.d/pre/README $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/pre/README
 	-$(INSTALL_FILE) pcupdate.d/post/README $(INSTALL_ROOT)$(PREFIX)/etc/pcupdate.d/post/README
 

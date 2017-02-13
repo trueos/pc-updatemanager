@@ -101,7 +101,8 @@ do_self_bootstrap() {
 }
 
 # Check if we need to try a self-update
-if [ -z "$DISABLE_UPDATE_BOOTSTRAP" ] ; then
+if [ -z "$DISABLE_UPDATE_BOOTSTRAP" -a -n "${1}" -a "${1}" != "doshutdownupdate" ] ; then
+
   export DISABLE_UPDATE_BOOTSTRAP="YES"
 
   do_self_bootstrap
@@ -170,26 +171,37 @@ LOGOUT="/var/log/pc-updatemanager.log"
 PKGUPDATERTN=100
 UPDATEOTHERRTN=125
 
+# Files to overwrite in /etc with upgrades
+ETC_DISTUPGRADE="./etc/rc ./etc/rc.shutdown ./etc/rc.devd ./etc/devd.conf ./etc/defaults/rc.conf ./etc/auto_master /etc/autofs"
+
+# Default OpenRC Services to enable
+OPENRC_BOOT_SERV="abi adjkerntz bootmisc cron devd dumpon fsck hostid hostname localmount loopback modules motd network newsyslog nisdomain"
+OPENRC_BOOT_SERV="${OPENRC_BOOT_SERV} root routing savecore staticroute swap syscons sysctl syslogd urandom zfs zvol "
+OPENRC_DEFAULT_SERV="local netmount"
+OPENRC_SHUTDOWN_SERV="savecache"
+OPENRC_NONET_SERV="local"
+export OPENRC_BOOT_SERV OPENRC_DEFAULT_SERV OPENRC_SHUTDOWN_SERV OPENRC_NONET_SERV
+
 ######################################################################
 # Done with config values
 ######################################################################
 
 # Get the PACKAGE_SET to use for this pkgng repo
 PACKAGE_SET="PRODUCTION"
-_pkgChk="`sed -n 's/PACKAGE_SET: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
+_pkgChk="`sed -n 's/^PACKAGE_SET: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
 if [ -n "${_pkgChk}" ] ; then PACKAGE_SET="$_pkgChk" ; fi
 
 AUTO_UPDATE="securitypkg"
-_upChk="`sed -n 's/AUTO_UPDATE: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
+_upChk="`sed -n 's/^AUTO_UPDATE: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
 if [ -n "${_upChk}" ] ; then AUTO_UPDATE="$_upChk" ; fi
 
 CDN_TYPE="HTTP"
-_cdnChk="`sed -n 's/CDN_TYPE: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
+_cdnChk="`sed -n 's/^CDN_TYPE: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
 if [ -n "${_cdnChk}" ] ; then CDN_TYPE="$_cdnChk" ; fi
 
 # Check the PACKAGE_SET variable
 case $PACKAGE_SET in
-  ENTERPRISE|PRODUCTION|EDGE) ;;
+  ENTERPRISE|PRODUCTION|EDGE|STABLE|UNSTABLE) ;;
   CUSTOM) # Using a custom package set?
           # Lets check that we have a URL provided
 	  _urlChk="`sed -n 's/^PACKAGE_URL: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
@@ -363,6 +375,12 @@ setup_pkgng_conf() {
 
   ARCH=`uname -m`
   PKGVER="master"
+
+  # If using the UNSTABLE package set, set the right path
+  case $PACKAGE_SET in
+   UNSTABLE) PKGVER="$PKGVER/edge" ;;
+          *) ;;
+  esac
 
   # Now create standard trueos.conf file
   if [ "$PACKAGE_SET" = "CUSTOM" -a -n "$CUSTOM_URL" ] ; then
@@ -980,7 +998,7 @@ update_pkgs_only()
   run_update_pre "PKG"
   mk_pkg_conf "stage1"
   build_pkg_list
-  dl_pkgs "pkg"
+  dl_pkgs "world"
 
   prep_update_shutdown "update_pkgs_only"
 }
@@ -1120,11 +1138,9 @@ setup_pkgng_newrepo_conf() {
   ARCH=`uname -m`
   PKGVER="master"
 
-  # If using the EDGE package set, set the right path
+  # If using the UNSTABLE package set, set the right path
   case $PACKAGE_SET in
-       EDGE) FBSDVER="$FBSDVER/edge"
-	     MAJORVER="$MAJORVER/edge"
-	     ;;
+       UNSTABLE) PKGVER="$PKGVER/edge" ;;
           *) ;;
   esac
 
@@ -1205,6 +1221,8 @@ build_pkg_list()
 
 dl_pkgs()
 {
+  unset OBSOLETE_PACKAGES
+
   # Make sure PKG itself is upgraded
   echo_log "Checking for updates to ports-mgmt/pkg.."
   ${PKG_CMD} upgrade -y ports-mgmt/pkg
@@ -1217,12 +1235,34 @@ dl_pkgs()
 
   # Clean pkgs
   echo_log "Cleaning old pkg upgrade cache..."
-  #${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} clean -y >/dev/null 2>/dev/null
+  ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} clean -y >/dev/null 2>/dev/null
   sync
   sleep 2
 
   if [ -e "$NEWPKGLIST" ] ; then rm $NEWPKGLIST; fi
   touch ${NEWPKGLIST}
+
+  # Get the URL for the base packages
+  BPURL=$(cat /usr/local/etc/pkg/repos/trueos-base.conf | grep 'url:' | awk '{print $2}' | cut -d '"' -f 2)
+
+  # Fetch the fbsd-distrib.txz file
+  fetch -o ${REALPKGDLCACHE}/fbsd-distrib.txz "${BPURL}/fbsd-distrib.txz"
+  if [ $? -ne 0 ] ; then
+     echo_log "Failed downloading fbsd-distrib.txz" >> ${PKGUPGRADELOG}
+     exit_err "Failed downloading fbsd-distrib.txz"
+  fi
+  fetch -o ${REALPKGDLCACHE}/fbsd-distrib.txz.sha1 "${BPURL}/fbsd-distrib.txz.sha1"
+  if [ $? -ne 0 ] ; then
+     echo_log "Failed downloading fbsd-distrib.txz.sha1" >> ${PKGUPGRADELOG}
+     exit_err "Failed downloading fbsd-distrib.txz.shg1"
+  fi
+
+  # Verify Signature of the fbsd-distrib file
+  openssl dgst -sha1 -verify /usr/local/share/trueos/pc-updatemanager/fbsd-dist.pub  -signature ${REALPKGDLCACHE}/fbsd-distrib.txz.sha1 ${REALPKGDLCACHE}/fbsd-distrib.txz
+  if [ $? -ne 0 ] ; then
+     echo_log "Failed verification of fbsd-distrib.txz" >> ${PKGUPGRADELOG}
+     exit_err "Failed verification of fbsd-distrib.txz"
+  fi
 
   # Save the PKGNG filename
   PKGFILENAME="`${PKG_CMD} ${PKG_FLAG} rquery -U '%n-%v' ports-mgmt/pkg 2>/dev/null | head -n 1`.txz"
@@ -1296,6 +1336,7 @@ dl_pkgs()
     unset FETCHFILENAME
     FETCHFILENAME="`${PKG_CMD} ${PKG_FLAG} rquery -U '%n-%v' $pkgOrigin 2>/dev/null | head -n 1`"
     if [ -z "$FETCHFILENAME" ] ; then
+       OBSOLETE_PACKAGES="${pkgOrigin} ${OBSOLETE_PACKAGES}"
        echo_log "*****"
        echo_log "No such package in new repo: $pkgOrigin"
        echo "*****" >> $PKGUPGRADELOG
@@ -1409,8 +1450,7 @@ mk_stage_be()
   fi
 
   # Create the new stage boot environment
-  TMPNICK=`date "+%Y%m%d_%H%M%S"`
-  rc_halt "beadm create $STAGEBE ${TMPNICK}" >>${LOGOUT} 2>>${LOGOUT}
+  rc_halt "beadm create $STAGEBE" >>${LOGOUT} 2>>${LOGOUT}
 }
 
 mount_stage_be()
@@ -1479,6 +1519,9 @@ do_lite_pkgupdate_chroot()
     return 1
   fi
 
+  # Set all pkgs as not auto-installed, so pkg autoremove doesn't touch them
+  chroot ${STAGEMNT} pkg-static ${PKG_CFLAG} ${PKG_FLAG} set -y -A 00 -g FreeBSD-\*
+
   # Looks like the upgrade was good! Lets move back the PKG repo
   echo_log "Moving updated pkg repo..."
   rm -rf ${STAGEMNT}/var/db/pkg.preUpgrade 2>/dev/null
@@ -1492,6 +1535,52 @@ do_lite_pkgupdate_chroot()
   mkdir -p ${STAGEMNT}/compat/linux/dev 2>/dev/null
   mkdir -p ${STAGEMNT}/compat/linux/run 2>/dev/null
 
+  if [ -e "${STAGEMNT}/etc/init.d" ] ; then
+
+    # Update some of the etc files from 'make distribution'
+    echo_log "Extracting distribution files..."
+    tar xvpf ${REALPKGDLCACHE}/fbsd-distrib.txz -C ${STAGEMNT} ${ETC_DISTUPGRADE}
+    if [ $? -ne 0 ] ; then
+      echo_log "Warning: Failed extracting distribution upgrade files"
+    fi
+
+    echo_log "Updating OpenRC settings..."
+
+    # Make sure the various openrc dirs exist
+    mkdir -p ${STAGEMNT}/etc/runlevels 2>/dev/null
+    mkdir -p ${STAGEMNT}/etc/runlevels/boot 2>/dev/null
+    mkdir -p ${STAGEMNT}/etc/runlevels/default 2>/dev/null
+    mkdir -p ${STAGEMNT}/etc/runlevels/nonetwork 2>/dev/null
+    mkdir -p ${STAGEMNT}/etc/runlevels/shutdown 2>/dev/null
+    mkdir -p ${STAGEMNT}/etc/runlevels/sysinit 2>/dev/null
+    mkdir -p ${STAGEMNT}/libexec/rc/init.d 2>/dev/null
+
+    # Enable OpenRC Services
+    for serv in ${OPENRC_BOOT_SERV}
+    do
+       chroot ${STAGEMNT} rc-update add $serv boot
+    done
+    for serv in ${OPENRC_DEFAULT_SERV}
+    do
+       chroot ${STAGEMNT} rc-update add $serv default
+    done
+    for serv in ${OPENRC_SHUTDOWN_SERV}
+    do
+       chroot ${STAGEMNT} rc-update add $serv shutdown
+    done
+    for serv in ${OPENRC_NONET_SERV}
+    do
+       chroot ${STAGEMNT} rc-update add $serv nonetwork
+    done
+  fi
+
+  # Determine if we need to do first-time rc -> openrc migration
+  if [ ! -e "${STAGEMNT}/var/migrate-rc-openrc" ] ; then
+    echo_log "Running OpenRC Migration..."
+    chroot ${STAGEMNT} /usr/local/bin/migrate_rc_openrc
+    touch "${STAGEMNT}/var/migrate_rc_openrc"
+  fi
+
   rm ${LOGOUT}.tmp
   return 0
 }
@@ -1504,15 +1593,16 @@ prep_pkgs_chroot()
   PACKAGE_BUILDING="YES"
   export PACKAGE_BUILDING
 
-  # If moving to a new world, boot-strap the package base
-  if [ "$1" = "world" ] ; then
-    echo "Boot-strapping package base..."
-    pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} install -yfg 'FreeBSD-*'
-    if [ $? -ne 0 ] ; then
-      echo "FAILED INSTALLING world base packages"
-      exit 1
-    fi
+  # Always install the latest base system packages
+  echo "Boot-strapping package base..."
+  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} install -yfg 'FreeBSD-*'
+  if [ $? -ne 0 ] ; then
+    echo "FAILED INSTALLING world base packages"
+    exit 1
   fi
+
+  # Set all pkgs as not auto-installed, so pkg autoremove doesn't touch them
+  pkg -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} set -y -A 00 -g FreeBSD-\*
 
   # Next create the script to bootstrap pkgng
   echo "#!/bin/sh
@@ -1584,6 +1674,15 @@ mkdir -p /compat/linux/dev
 mkdir -p /compat/linux/run
 ln -s /usr/home /compat/linux/usr/home
 
+# Make sure the various openrc dirs exist
+mkdir -p /etc/runlevels 2>/dev/null
+mkdir -p /etc/runlevels/boot 2>/dev/null
+mkdir -p /etc/runlevels/default 2>/dev/null
+mkdir -p /etc/runlevels/nonetwork 2>/dev/null
+mkdir -p /etc/runlevels/shutdown 2>/dev/null
+mkdir -p /etc/runlevels/sysinit 2>/dev/null
+mkdir -p /libexec/rc/init.d 2>/dev/null
+
 while read pkgLine
 do
   pkgOrigin=\"\`echo \$pkgLine | cut -d ' ' -f 1\`\"
@@ -1611,6 +1710,41 @@ if [ \$? -ne 0 ] ; then
   cat /pkg-add.log
   echo "FAILED INSTALLING $SYSBASEORIGIN"
   exit 1
+fi
+
+if [ -e \"/etc/init.d\" ] ; then
+
+  # Update some of the etc files from make distribution
+  echo \"Extracting distribution files...\"
+  tar xvpf ${REALPKGDLCACHE}/fbsd-distrib.txz -C / ${ETC_DISTUPGRADE}
+  if [ $? -ne 0 ] ; then
+    echo \"Warning: Failed extracting distribution upgrade files\"
+  fi
+
+  # Enable OpenRC Services
+  for serv in ${OPENRC_BOOT_SERV}
+  do
+     rc-update add \$serv boot
+  done
+  for serv in ${OPENRC_DEFAULT_SERV}
+  do
+     rc-update add \$serv default
+  done
+  for serv in ${OPENRC_SHUTDOWN_SERV}
+  do
+     rc-update add \$serv shutdown
+  done
+  for serv in ${OPENRC_NONET_SERV}
+  do
+     rc-update add \$serv nonetwork
+  done
+
+  # Determine if we need to do first-time rc -> openrc migration
+  if [ ! -e /var/migrate-rc-openrc ] ; then
+    echo \"Running OpenRC Migration...\"
+    /usr/local/bin/migrate_rc_openrc
+    touch /var/migrate_rc_openrc
+  fi
 fi
 
 echo \"Moving updated pkg repo...\"
@@ -1652,9 +1786,12 @@ umount_stage_be()
   if [ ! -d "${STAGEMNT}/usr/local/log/pc-updatemanager" ] ; then
      mkdir -p "${STAGEMNT}/usr/local/log/pc-updatemanager"
   fi
+
+  echo_log "Copy upgrade.log to new BE..."
   rc_halt_cleanup "cp ${PKGUPGRADELOG} ${STAGEMNT}/usr/local/log/pc-updatemanager/upgrade.log"
 
   # Figure out the name of the new BE
+  echo_log "Determine new BE name..."
   nDate=`date "+%Y%m%d_%H%M%S"`
   if [ -n "$NEWFREEBSDVERSION" ] ; then
     newBEName="${NEWFREEBSDVERSION}-up-${nDate}"
@@ -1665,6 +1802,8 @@ umount_stage_be()
     fi
     newBEName="${beVer}-up-${nDate}"
   fi
+
+  echo_log "Cleanup mounts..."
 
   # Now cleanup / unmount
   rc_halt "umount -f ${STAGEMNT}/dev"
@@ -1682,7 +1821,6 @@ mk_stage_be_default()
   # Rename the BE
   rc_halt "beadm rename $STAGEBE $newBEName"
   # Rename the nickname
-  rc_nohalt "beadm rename -n ${TMPNICK} ${newBEName}"
   rc_halt "beadm activate $newBEName"
 
   # Only update grub if its installed
@@ -1866,6 +2004,7 @@ shutdown_update() {
   echo "*****************************************************"
   echo "             Starting update process..."
   echo "      !! Please do NOT turn off the computer !!"
+  echo " All logs are stored in /var/log/pc-updatemanager.log"
   echo "             ${FKEY}"
   echo "*****************************************************"
 
