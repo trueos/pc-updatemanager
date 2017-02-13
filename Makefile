@@ -8,6 +8,7 @@ AR            = ar cqs
 RANLIB        = 
 TAR           = tar -cf
 COMPRESS      = gzip -9f
+COMPRESS_MAN	= gzip -c
 COPY          = cp -f
 SED           = sed
 COPY_FILE     = $(COPY)
@@ -34,6 +35,7 @@ install_scripts: first FORCE
 	-$(INSTALL_FILE) pc-autoupdate $(INSTALL_ROOT)$(PREFIX)/bin/
 	-$(INSTALL_FILE) rc-update $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/
 	-$(INSTALL_FILE) rc-doupdate $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/
+	-$(COMPRESS_MAN) pc-updatemanager.8 > $(INSTALL_ROOT)$(PREFIX)/man/man8/pc-updatemanager.8.gz
 
 
 uninstall_scripts:  FORCE
@@ -68,4 +70,3 @@ install:  install_scripts install_dochmod install_conf install_pcupdated  FORCE
 uninstall: uninstall_scripts uninstall_conf  FORCE
 
 FORCE:
-
