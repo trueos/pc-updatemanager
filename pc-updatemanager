@@ -881,13 +881,6 @@ checkup_pkgs() {
   fi
 
   ${PKG_CMD} ${PKG_FLAG} upgrade -n >/tmp/.pkgData.$$
-  if [ $? -ne 0 ] ; then
-     echo "Error checking for package updates..."
-     if [ -e "/usr/local/bin/pc-systemflag" ]; then
-       pc-systemflag PKGUPDATE ERROR #set the system flag pkg check errored
-     fi
-     exit 1
-  fi
 
   # Check for updates now
   grep -q "Your packages are up to date" /tmp/.pkgData.$$
