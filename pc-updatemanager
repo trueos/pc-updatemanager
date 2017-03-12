@@ -509,7 +509,7 @@ do_branch() {
   up="$1"
 
   # Setup our variable to catch if we have a bad branch
-  BRANCHFOUND="0" 
+  BRANCHFOUND="0"
 
   while read line
   do
@@ -517,8 +517,8 @@ do_branch() {
      if [ $? -eq 0 ] ; then
 	for i in `echo $line | cut -d ':' -f 2 | sed 's|,| |g'`
 	do
-  	  if [ "$i" != "$up" ] ; then continue ;fi
-  	  if [ "`uname -r | cut -d '-' -f 1-2`" = "$up" ] ; then 
+	  if [ "$i" != "$up" ] ; then continue ;fi
+	  if [ "`uname -r | cut -d '-' -f 1-2`" = "$up" ] ; then
 	     echo "You are already on this branch!"
              BRANCHFOUND="1"
 	     continue;
@@ -531,7 +531,7 @@ do_branch() {
   done < ${PATCHTMPFILE}
 
   # If no patches
-  if [ "${BRANCHFOUND}" = "0" ]; then 
+  if [ "${BRANCHFOUND}" = "0" ]; then
      # No available updates
      echo "Unknown branch ${1}"
   fi
@@ -873,7 +873,7 @@ do_install() {
 	for up in `echo $1 | sed 's|,| |g'`
 	do
 	  # If this is a major update, start it up!
-  	  echo $up | grep -q "^fbsd-" 
+	  echo $up | grep -q "^fbsd-"
 	  if [ $? -eq 0 ] ; then 
             update_world_and_pkgs "`echo $up | sed 's|fbsd-||g'`"
 	    exit 0
@@ -1196,23 +1196,21 @@ setup_pkgng_newrepo_conf() {
   PKGVER="master"
 
   if [ "$CDN_TYPE" = "IPFS" ] ; then
-	  if [ ! -e '/var/db/trueos-pkg-ipfs' ] ; then
-		get_latest_ipfs_hash
-	  fi
-	  local ipfshash="${IPFS_HASH}"
-	  local PACKAGE_SET="CUSTOM"
-	  local CUSTOM_URL="http://127.0.0.1:12034/ipfs/${ipfshash}/${ARCH}"
+	get_latest_ipfs_hash
+	local ipfshash="${IPFS_HASH}"
+	local PACKAGE_SET="CUSTOM"
+	local CUSTOM_URL="http://127.0.0.1:12034/ipfs/${ipfshash}/${ARCH}"
 
-	  # Make sure the trueos IPFS daemon is running
-	  service trueos-ipfs status >/dev/null 2>/dev/null
-	  if [ $? -ne 0 ] ; then
-		  service trueos-ipfs start #>/dev/null 2>/dev/null
-	  fi
-	  # Make sure the daemon is set to run at startup
-	  rc-update show default | grep -q trueos-ipfs
-	  if [ $? -ne 0 ] ; then
+	# Make sure the trueos IPFS daemon is running
+	service trueos-ipfs status >/dev/null 2>/dev/null
+	if [ $? -ne 0 ] ; then
+		 service trueos-ipfs start #>/dev/null 2>/dev/null
+	fi
+	# Make sure the daemon is set to run at startup
+	rc-update show default | grep -q trueos-ipfs
+	if [ $? -ne 0 ] ; then
 		rc-update add trueos-ipfs default #>/dev/null 2>dev/null
-	  fi
+	fi
   fi
 
   # If using the UNSTABLE package set, set the right path
@@ -2219,7 +2217,7 @@ while [ $# -gt 0 ] ; do
 		  break
                   ;;
         showeol)  get_update_file
-                  do_eol_display 
+                  do_eol_display
 		  exit $?
 		  break
 		  ;;
@@ -2243,11 +2241,15 @@ while [ $# -gt 0 ] ; do
        pkgupdate) require_root
 		  sync_pkgconf
 		  rotate_log
-		  update_pkgs_only "$2"
+		  if [ "$CDN_TYPE" = "IPFS" ] ; then
+			update_world_and_pkgs "12-CURRENT"
+		  else
+			update_pkgs_only "$2"
+		  fi
 		  exit 0
                   break
                   ;;
- 	 install) require_root
+	 install) require_root
 		  rotate_log
 		  get_update_file
                   do_install "${2}"
