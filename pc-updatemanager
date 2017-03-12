@@ -127,6 +127,10 @@ UPDATECONF="${PROGDIR}/conf/sysupdate.conf"
 # Set the system arch type
 ARCH=`uname -m`
 
+# Location for master IPFS files which list latest stable/unstable hashes
+IPFS_HASHFILE_STABLE="https://raw.githubusercontent.com/trueos/pc-updatemanager/master/trueos-ipfs-stable"
+IPFS_HASHFILE_UNSTABLE="https://raw.githubusercontent.com/trueos/pc-updatemanager/master/trueos-ipfs-unstable"
+
 # Patchset Data
 PATCHSERVER="`cat ${UPDATECONF} | grep '^UPDATESERVER:' | cut -d ' ' -f 2`"
 PATCHSET="`cat ${UPDATECONF} | grep '^PATCHSET:' | cut -d ' ' -f 2`"
@@ -329,16 +333,16 @@ show_usage() {
         echo "pc-updatemanager: Usage
 ----
   branches 		- List available system branches
-  chbranch <tag> 	- Change to new system branch
-  check 		- Check for system updates
+  chbranch <tag>	- Change to new system branch
+  check			- Check for system updates
   showeol               - Show end of life (support) date for this release
-  install <tag>,<tag2> 	- Install system updates
-  pkgcheck 		- Check for updates to packages
+  install <tag>,<tag2>	- Install system updates
+  pkgcheck		- Check for updates to packages
   pkgupdate [-f]	- Install packages updates (-f to force)
   syncconf		- Update PC-BSD pkg configuration
   confcheck		- Check PC-BSD pkg configuration
   cron                  - Perform delayed check for system and pkg updates.
-"	
+"
 
 	exit 1
 }
@@ -371,6 +375,26 @@ setup_pkgng_conf() {
   # Remove old pkg conf
   if [ -e "/usr/local/etc/pkg/repos/trueos.conf" ] ; then
     rm /usr/local/etc/pkg/repos/trueos.conf
+  fi
+
+  if [ "$CDN_TYPE" = "IPFS" ] ; then
+	  if [ ! -e '/var/db/trueos-pkg-ipfs' ] ; then
+		echo "No stored IPFS hash... Fetching latest from master site..."
+		case $PACKAGE_SET in
+			UNSTABLE) _fUrl="${IPFS_HASHFILE_UNSTABLE}" ;;
+			*) _fUrl="${IPFS_HASHFILE_STABLE}" ;;
+		esac
+		fetch -o /tmp/.tipfs.$$ ${_fUrl}
+		if [ $? -ne 0 ] ; then
+			echo "ERROR: Could not fetch IPFS hashes!"
+			exit 1
+		fi
+		cat /tmp/.tipfs.$$ | sort -r | head -n 1 | awk '{print $1}' > /var/db/trueos-pkg-ipfs
+		rm /tmp/.tipfs.$$
+	  fi
+	  local ipfshash=`cat /var/db/trueos-pkg-ipfs`
+	  local PACKAGE_SET="CUSTOM"
+	  local CUSTOM_URL="http://127.0.0.1:12034/ipfs/${ipfshash}/${ARCH}"
   fi
 
   ARCH=`uname -m`
