@@ -353,6 +353,21 @@ echo_log()
    echo "$@" >> ${LOGOUT}
 }
 
+get_latest_ipfs_hash()
+{
+  case $PACKAGE_SET in
+	    UNSTABLE) _fUrl="${IPFS_HASHFILE_UNSTABLE}" ;;
+		*) _fUrl="${IPFS_HASHFILE_STABLE}" ;;
+  esac
+  fetch -o /tmp/.tipfs.$$ ${_fUrl} >/dev/null 2>/dev/null
+  if [ $? -ne 0 ] ; then
+    echo "ERROR: Could not fetch IPFS hashes!"
+    exit 1
+  fi
+  IPFS_HASH=`cat /tmp/.tipfs.$$ | sort -r | head -n 1 | awk '{print $2}'`
+  rm /tmp/.tipfs.$$
+}
+
 setup_pkgng_conf() {
 
   # Create the repos directory
@@ -380,17 +395,8 @@ setup_pkgng_conf() {
   if [ "$CDN_TYPE" = "IPFS" ] ; then
 	  if [ ! -e '/var/db/trueos-pkg-ipfs' ] ; then
 		echo "No stored IPFS hash... Fetching latest from master site..."
-		case $PACKAGE_SET in
-			UNSTABLE) _fUrl="${IPFS_HASHFILE_UNSTABLE}" ;;
-			*) _fUrl="${IPFS_HASHFILE_STABLE}" ;;
-		esac
-		fetch -o /tmp/.tipfs.$$ ${_fUrl} >/dev/null 2>/dev/null
-		if [ $? -ne 0 ] ; then
-			echo "ERROR: Could not fetch IPFS hashes!"
-			exit 1
-		fi
-		cat /tmp/.tipfs.$$ | sort -r | head -n 1 | awk '{print $2}' > /var/db/trueos-pkg-ipfs
-		rm /tmp/.tipfs.$$
+		get_latest_ipfs_hash
+		echo "$IPFS_HASH" > /var/db/trueos-pkg-ipfs
 	  fi
 	  local ipfshash=`cat /var/db/trueos-pkg-ipfs`
 	  local PACKAGE_SET="CUSTOM"
@@ -910,6 +916,29 @@ check_pkgconf() {
 
 checkup_pkgs() {
 
+  # If using IPFS, we can check upstream for a newer package HASH
+  if [ "$CDN_TYPE" = "IPFS" ] ; then
+    get_latest_ipfs_hash
+    if [ "$IPFS_HASH" != `cat /var/db/trueos-pkg-ipfs 2>/dev/null` ] ; then
+      echo "The following updates are available:"
+      echo "------------------------------------"
+      echo "NAME: System package updates"
+      echo "TYPE: PKGUPDATE"
+      echo " "
+      echo "To install: \"pc-updatemanager pkgupdate\""
+      if [ -e "/usr/local/bin/pc-systemflag" ]; then
+        pc-systemflag PKGUPDATE UPDATE #set the system flag that updates available
+      fi
+      return $PKGUPDATERTN
+   else
+      echo "All packages are up to date!"
+      if [ -e "/usr/local/bin/pc-systemflag" ]; then
+        pc-systemflag PKGUPDATE SUCCESS #set the system flag that packages are up to date
+      fi
+    fi
+    return 0
+  fi
+
   # Update the repo DB
   if [ "`id -u`" = "0" ] ; then
     rc_halt "${PKG_CMD} update"
@@ -1165,6 +1194,26 @@ setup_pkgng_newrepo_conf() {
 
   ARCH=`uname -m`
   PKGVER="master"
+
+  if [ "$CDN_TYPE" = "IPFS" ] ; then
+	  if [ ! -e '/var/db/trueos-pkg-ipfs' ] ; then
+		get_latest_ipfs_hash
+	  fi
+	  local ipfshash="${IPFS_HASH}"
+	  local PACKAGE_SET="CUSTOM"
+	  local CUSTOM_URL="http://127.0.0.1:12034/ipfs/${ipfshash}/${ARCH}"
+
+	  # Make sure the trueos IPFS daemon is running
+	  service trueos-ipfs status >/dev/null 2>/dev/null
+	  if [ $? -ne 0 ] ; then
+		  service trueos-ipfs start #>/dev/null 2>/dev/null
+	  fi
+	  # Make sure the daemon is set to run at startup
+	  rc-update show default | grep -q trueos-ipfs
+	  if [ $? -ne 0 ] ; then
+		rc-update add trueos-ipfs default #>/dev/null 2>dev/null
+	  fi
+  fi
 
   # If using the UNSTABLE package set, set the right path
   case $PACKAGE_SET in
