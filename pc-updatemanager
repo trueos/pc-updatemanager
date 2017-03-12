@@ -384,17 +384,28 @@ setup_pkgng_conf() {
 			UNSTABLE) _fUrl="${IPFS_HASHFILE_UNSTABLE}" ;;
 			*) _fUrl="${IPFS_HASHFILE_STABLE}" ;;
 		esac
-		fetch -o /tmp/.tipfs.$$ ${_fUrl}
+		fetch -o /tmp/.tipfs.$$ ${_fUrl} >/dev/null 2>/dev/null
 		if [ $? -ne 0 ] ; then
 			echo "ERROR: Could not fetch IPFS hashes!"
 			exit 1
 		fi
-		cat /tmp/.tipfs.$$ | sort -r | head -n 1 | awk '{print $1}' > /var/db/trueos-pkg-ipfs
+		cat /tmp/.tipfs.$$ | sort -r | head -n 1 | awk '{print $2}' > /var/db/trueos-pkg-ipfs
 		rm /tmp/.tipfs.$$
 	  fi
 	  local ipfshash=`cat /var/db/trueos-pkg-ipfs`
 	  local PACKAGE_SET="CUSTOM"
 	  local CUSTOM_URL="http://127.0.0.1:12034/ipfs/${ipfshash}/${ARCH}"
+
+	  # Make sure the trueos IPFS daemon is running
+	  service trueos-ipfs status >/dev/null 2>/dev/null
+	  if [ $? -ne 0 ] ; then
+		  service trueos-ipfs start #>/dev/null 2>/dev/null
+	  fi
+	  # Make sure the daemon is set to run at startup
+	  rc-update show default | grep -q trueos-ipfs
+	  if [ $? -ne 0 ] ; then
+		rc-update add trueos-ipfs default #>/dev/null 2>dev/null
+	  fi
   fi
 
   ARCH=`uname -m`
