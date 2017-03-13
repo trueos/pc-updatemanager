@@ -398,9 +398,9 @@ setup_pkgng_conf() {
 		get_latest_ipfs_hash
 		echo "$IPFS_HASH" > /var/db/trueos-pkg-ipfs
 	  fi
-	  local ipfshash=`cat /var/db/trueos-pkg-ipfs`
-	  local PACKAGE_SET="CUSTOM"
-	  local CUSTOM_URL="http://127.0.0.1:12034/ipfs/${ipfshash}/${ARCH}"
+	  ipfshash=`cat /var/db/trueos-pkg-ipfs`
+	  PACKAGE_SET="CUSTOM"
+	  CUSTOM_URL="http://127.0.0.1:12034/ipfs/${ipfshash}/${ARCH}"
 
 	  # Make sure the trueos IPFS daemon is running
 	  service trueos-ipfs status >/dev/null 2>/dev/null
@@ -1197,9 +1197,9 @@ setup_pkgng_newrepo_conf() {
 
   if [ "$CDN_TYPE" = "IPFS" ] ; then
 	get_latest_ipfs_hash
-	local ipfshash="${IPFS_HASH}"
-	local PACKAGE_SET="CUSTOM"
-	local CUSTOM_URL="http://127.0.0.1:12034/ipfs/${ipfshash}/${ARCH}"
+	ipfshash="${IPFS_HASH}"
+	PACKAGE_SET="CUSTOM"
+	CUSTOM_URL="http://127.0.0.1:12034/ipfs/${ipfshash}/${ARCH}"
 
 	# Make sure the trueos IPFS daemon is running
 	service trueos-ipfs status >/dev/null 2>/dev/null
