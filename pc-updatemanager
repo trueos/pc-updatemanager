@@ -361,11 +361,18 @@ get_latest_ipfs_hash()
   esac
   fetch -o /tmp/.tipfs.$$ ${_fUrl} >/dev/null 2>/dev/null
   if [ $? -ne 0 ] ; then
+    rm /tmp/.tipfs.$$
     echo "ERROR: Could not fetch IPFS hashes!"
     exit 1
   fi
   IPFS_HASH=`cat /tmp/.tipfs.$$ | sort -r | head -n 1 | awk '{print $2}'`
   rm /tmp/.tipfs.$$
+
+  if [ -z "$IPFS_HASH" ] ; then
+    echo "ERROR: Could not fetch IPFS hashes!"
+    exit 1
+  fi
+  return 0
 }
 
 setup_pkgng_conf() {
@@ -1318,9 +1325,15 @@ dl_pkgs()
   touch ${NEWPKGLIST}
 
   # Get the URL for the base packages
-  BPURL=$(cat /usr/local/etc/pkg/repos/trueos-base.conf | grep 'url:' | awk '{print $2}' | cut -d '"' -f 2)
+  echo $PKG_FLAG | grep -q "/usr/local/tmp/.updateRepo"
+  if [ $? -eq 0 ] ; then
+    BPURL=$(cat /usr/local/tmp/.updateRepo/pkgUpdateRepo.conf | grep 'url:' | grep "${ARCH}-base" | awk '{print $2}' | cut -d '"' -f 2)
+  else
+    BPURL=$(cat /usr/local/etc/pkg/repos/trueos-base.conf | grep 'url:' | awk '{print $2}' | cut -d '"' -f 2)
+  fi
 
   # Fetch the fbsd-distrib.txz file
+  echo "fetch -o ${REALPKGDLCACHE}/fbsd-distrib.txz ${BPURL}/fbsd-distrib.txz"
   fetch -o ${REALPKGDLCACHE}/fbsd-distrib.txz "${BPURL}/fbsd-distrib.txz"
   if [ $? -ne 0 ] ; then
      echo_log "Failed downloading fbsd-distrib.txz" >> ${PKGUPGRADELOG}
