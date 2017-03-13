@@ -17,6 +17,7 @@ depend()
 {
 	need localmount net
 	after bootmisc
+	keyword -stop -shutdown
 }
 
 init_config()
@@ -29,9 +30,9 @@ init_config()
 		einfo "Running first-time init"
 		${BIN} -c ${config} init
 		${BIN} -c ${config} config -- Datastore.StorageMax 50G
+		${BIN} -c ${config} config -- Datastore.Path /var/db/trueos-ipfs-cache
+		${BIN} -c ${config} config -- Addresses.Gateway /ip4/127.0.0.1/tcp/12034
 	fi
-	${BIN} -c ${config} config -- Datastore.Path /var/db/trueos-ipfs-cache
-	${BIN} -c ${config} config -- Addresses.Gateway /ip4/127.0.0.1/tcp/12034
 }
 
 start()
