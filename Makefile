@@ -36,7 +36,6 @@ install_scripts: first FORCE
 	-$(INSTALL_FILE) pc-autoupdate $(INSTALL_ROOT)$(PREFIX)/bin/
 	-$(INSTALL_FILE) rc-update $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/
 	-$(INSTALL_FILE) rc-doupdate $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/
-	-$(INSTALL_FILE) ipfs $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/
 	-$(INSTALL_FILE) fbsd-dist.pub $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/
 	-$(INSTALL_FILE) init.d/trueos-ipfs $(INSTALL_ROOT)$(PREFIX)/etc/init.d/
 	-$(COMPRESS_MAN) pc-updatemanager.8 > $(INSTALL_ROOT)$(PREFIX)/man/man8/pc-updatemanager.8.gz
@@ -46,7 +45,6 @@ uninstall_scripts:  FORCE
 	-$(DEL_FILE) -r $(INSTALL_ROOT)$(PREFIX)/bin/pc-updatemanager
 	-$(DEL_FILE) -r $(INSTALL_ROOT)$(PREFIX)/bin/pc-autoupdate
 	-$(DEL_FILE) -r $(INSTALL_ROOT)$(PREFIX)/etc/init.d/trueos-ipfs
-	-$(DEL_FILE) -r $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/ipfs
 	-$(DEL_DIR) $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager
 
 
@@ -54,7 +52,6 @@ install_dochmod: first FORCE
 	@$(CHK_DIR_EXISTS) $(INSTALL_ROOT)$(PREFIX)/bin/ || $(MKDIR) $(INSTALL_ROOT)$(PREFIX)/bin/ 
 	chmod 755 $(PREFIX)/bin/pc-updatemanager
 	chmod 755 $(PREFIX)/bin/pc-autoupdate
-	chmod 755 $(PREFIX)/share/trueos/pc-updatemanager/ipfs
 
 install_conf: first FORCE
 	@$(CHK_DIR_EXISTS) $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/ || $(MKDIR) $(INSTALL_ROOT)$(PREFIX)/share/trueos/pc-updatemanager/

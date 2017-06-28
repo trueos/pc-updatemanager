@@ -97,6 +97,64 @@ do_self_bootstrap() {
   fi
   echo "OK"
 
+  rm ${dlfile}.sha1 >/dev/null 2>/dev/null
+  rm ${dlfile} >/dev/null 2>/dev/null
+
+  return 0
+}
+
+do_ipfs_bootstrap() {
+  # Only do this as root
+  if [ `id -u` != "0" ] ; then return 0; fi
+
+  # Start the updaters self-update protocol
+  local fbsdmajor=$(uname -r | cut -d '-' -f 1 | cut -d '.' -f 1)
+  local ipfsupdateurl="http://www.trueos.org/updates/ipfs-${fbsdmajor}.xz"
+  local dlfile="`mktemp /tmp/.pc-updater.XXXXXX`.xz"
+  if [ $? -ne 0 ] ; then
+    return 0
+  fi
+
+  # Fetch the signature
+  fetch -m -o ${dlfile}.sha1 ${ipfsupdateurl}.sha1 >/dev/null 2>/dev/null
+  if [ $? -ne 0 ] ; then echo "FAILED Fetch2" ; return 1; fi
+
+  # Check if we need to boot-strap IPFS
+  if [ -e "${DBDIR}/ipfs.sha1" ] ; then
+     diff -q ${DBRIR}/ipfs.sha1 ${dlfile}.sha1 >/dev/null 2>/dev/null
+     if [ $? -eq 0 ] ; then
+	     return 0
+     fi
+  fi
+
+  echo -e "Boot-strapping IPFS...\c"
+
+  # Fetch the IPFS binary
+  fetch -m -o ${dlfile} ${ipfsupdateurl} >/dev/null 2>/dev/null
+  if [ $? -ne 0 ] ; then echo "FAILED Fetch" ; return 1; fi
+
+  # Lets verify the signature of the file
+  openssl dgst -sha1 -verify ${SKEY} \
+	-signature ${dlfile}.sha1 \
+        ${dlfile} >/dev/null 2>/dev/null
+  if [ $? -ne 0 ] ; then echo "FAILED signature" ; return 1; fi
+
+  mv ${dlfile} /usr/local/share/trueos/pc-updatemanager/ipfs.xz
+  cd /usr/local/share/trueos/pc-updatemanager
+  rm -f ipfs >/dev/null 2>/dev/null
+  unxz -f /usr/local/share/trueos/pc-updatemanager/ipfs.xz >/dev/null 2>/dev/null
+  if [ $? -ne 0 ] ; then echo "FAILED IPFS - extract" ; return 1; fi
+
+  # Install it now
+  chmod 755 /usr/local/share/trueos/pc-updatemanager/ipfs
+  if [ $? -ne 0 ] ; then echo "FAILED IPFS - chmod" ; return 1; fi
+
+  mv ${dlfile}.sha1 ${DBDIR}/ipfs.sha1
+
+  service trueos-ipfs restart 2>/dev/null >/dev/null
+
+  echo "OK"
+
   return 0
 }
 
@@ -202,6 +260,11 @@ if [ -n "${_upChk}" ] ; then AUTO_UPDATE="$_upChk" ; fi
 CDN_TYPE="HTTP"
 _cdnChk="`sed -n 's/^CDN_TYPE: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
 if [ -n "${_cdnChk}" ] ; then CDN_TYPE="$_cdnChk" ; fi
+
+if [ "$CDN_TYPE" = "IPFS" ] ; then
+  # If we succeed, lets bootstrap IPFS
+  do_ipfs_bootstrap
+fi
 
 # Check the PACKAGE_SET variable
 case $PACKAGE_SET in
@@ -477,7 +540,7 @@ get_update_file() {
      rm ${PATCHTMPFILE} 2>/dev/null
      is_net_up
      if [ $? -eq 0 ] ; then 
-       echo "No updates available for $SYSVER!" ; exit 0 
+       echo "No updates available for $SYSVER!" ; exit 0
      else
        exit_err "Could not contact update server!"
      fi
@@ -489,7 +552,7 @@ get_update_file() {
      rm ${PATCHTMPFILE}.sha1 2>/dev/null
      is_net_up
      if [ $? -eq 0 ] ; then 
-       echo "No updates available for $SYSVER!" ; exit 0 
+       echo "No updates available for $SYSVER!" ; exit 0
      else
        echo_log "Could not contact update server!"
        exit_err "Could not contact update server!"
