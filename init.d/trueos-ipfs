@@ -33,6 +33,13 @@ init_config()
 		${BIN} -c ${config} config -- Datastore.Path /var/db/trueos-ipfs-cache
 		${BIN} -c ${config} config -- Addresses.Gateway /ip4/127.0.0.1/tcp/12034
 	fi
+
+	cat /usr/local/etc/trueos.conf 2>/dev/null | grep -q "^IPFS_DISABLE_NAT: TRUE"
+	if [ $? -eq 0 ] ; then
+		${BIN} -c ${config} config -- Swarm.DisableNatPortMap true
+	else
+		${BIN} -c ${config} config -- Swarm.DisableNatPortMap ""
+	fi
 }
 
 start()
