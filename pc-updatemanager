@@ -489,7 +489,7 @@ setup_pkgng_conf() {
 
   # If using the UNSTABLE package set, set the right path
   case $PACKAGE_SET in
-   UNSTABLE) PKGVER="$PKGVER/edge" ;;
+   UNSTABLE|EDGE) PKGVER="unstable" ;;
           *) ;;
   esac
 
@@ -1285,7 +1285,7 @@ setup_pkgng_newrepo_conf() {
 
   # If using the UNSTABLE package set, set the right path
   case $PACKAGE_SET in
-       UNSTABLE) PKGVER="$PKGVER/edge" ;;
+    UNSTABLE|EDGE) PKGVER="unstable" ;;
           *) ;;
   esac
 
