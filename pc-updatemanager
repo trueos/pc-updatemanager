@@ -1617,6 +1617,9 @@ mount_stage_be()
   umount -f $STAGEMNT/dev 2>/dev/null >/dev/null
   umount -f $STAGEMNT 2>/dev/null >/dev/null
 
+  # Save list of previous packages
+  ${PKG_CMD} info >${STAGEMNT}/previous-pkg-list
+
   # Mount the BE
   rc_halt "beadm mount $STAGEBE $STAGEMNT"
   if [ "$doPkgUpdates" = "YES" ] ; then
@@ -1930,9 +1933,11 @@ if [ ! -d \"/usr/local/log/pc-updatemanager\" ] ; then
   mkdir -p /usr/local/log/pc-updatemanager
 fi
 touch /install-pkg-list
+touch /previous-pkg-list
 touch /removed-pkg-list
 touch /failed-pkg-list
 mv /install-pkg-list /usr/local/log/pc-updatemanager/
+mv /previous-pkg-list /usr/local/log/pc-updatemanager/
 mv /removed-pkg-list /usr/local/log/pc-updatemanager/
 mv /failed-pkg-list /usr/local/log/pc-updatemanager/
 
