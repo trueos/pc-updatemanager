@@ -1548,12 +1548,12 @@ prep_rc_script_install()
   rm ${STAGEMNT}/var/.pc-attempt1 2>/dev/null
 
   # Now prep the RC script to do the rest of the upgrade after reboot
-  rc_halt_cleanup "chroot ${STAGEMNT} mv /etc/rc /etc/rc-orig"
-  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/proc"
-  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/sys"
-  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/usr"
-  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/dev"
-  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/run"
+  rc_halt_cleanup "mv ${STAGEMNT}/etc/rc ${STAGEMNT}/etc/rc-orig"
+  rc_halt_cleanup "mkdir -p ${STAGEMNT}/compat/linux/proc"
+  rc_halt_cleanup "mkdir -p ${STAGEMNT}/compat/linux/sys"
+  rc_halt_cleanup "mkdir -p ${STAGEMNT}/compat/linux/usr"
+  rc_halt_cleanup "mkdir -p ${STAGEMNT}/compat/linux/dev"
+  rc_halt_cleanup "mkdir -p ${STAGEMNT}/compat/linux/run"
   rc_halt_cleanup "cp /usr/local/sbin/beadm ${STAGEMNT}/etc/beadm"
   rc_halt_cleanup "chmod 755 ${STAGEMNT}/etc/beadm"
   rc_halt_cleanup "cp ${PROGDIR}/rc-update ${STAGEMNT}/etc/rc"
