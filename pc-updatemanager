@@ -1783,7 +1783,8 @@ prep_pkgs_chroot()
 
   # Check if something went horribly wrong
   if [ ! -e "${STAGEMNT}/bin/sh" ] ; then
-     pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} install -yfg 'FreeBSD-*' >>${LOGOUT} 2>>${LOGOUT}
+     ABI_FLAG="-o ABI=freebsd:`uname -r | cut -c 1-2`:`uname -m`"
+     pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} ${ABI_FLAG} install -yfg 'FreeBSD-*' >>${LOGOUT} 2>>${LOGOUT}
      if [ ! -e "${STAGEMNT}/bin/sh" ] ; then
        echo_log "Missing ${STAGEMNT}/bin/sh: Something went horribly wrong!"
        exit 1
