@@ -1762,15 +1762,22 @@ prep_pkgs_chroot()
   export PACKAGE_BUILDING
 
   # Always install the latest base system packages
-  echo "Boot-strapping package base..."
-  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} install -yfg 'FreeBSD-*'
+  echo_log "Boot-strapping package base..."
+  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} install -yfg 'FreeBSD-*' >>${LOGOUT} 2>>${LOGOUT}
   if [ $? -ne 0 ] ; then
-    echo "FAILED INSTALLING world base packages"
+    echo_log "FAILED INSTALLING world base packages"
     exit 1
   fi
 
   # Set all pkgs as not auto-installed, so pkg autoremove doesn't touch them
-  pkg -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} set -y -A 00 -g FreeBSD-\*
+  echo_log "Marking FreeBSD packages as not auto-installed"
+  pkg -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} set -y -A 00 -g FreeBSD-\* >>${LOGOUT} 2>>${LOGOUT}
+
+  # Check if something went horribly wrong
+  if [ ! -e "${STAGEMNT}/bin/sh" ] ; then
+     echo_log "Missing ${STAGEMNT}/bin/sh: Something went horribly wrong!"
+     exit 1
+  fi
 
   # Next create the script to bootstrap pkgng
   echo "#!/bin/sh
