@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2014 PC-BSD / iXsystems
+# Copyright (c) 2017 TrueOS / iXsystems
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,17 +28,22 @@
 # We are doing a major upgrade!
 TERM="cons25" ; export TERM
 export PATH="${PATH}:/usr/local/bin:/usr/local/sbin"
+
+if [ -e "/var/.pc-attempt1" ] ; then
+   echo "The previous upgrade attempt failed!"
+   echo "Rolling back to last known good BE..."
+   oldBE=`cat /var/.lastGoodBE`
+   /etc/beadm activate $oldBE   
+fi
+
+# Set indicator that this is first attempt at upgrading
+touch /var/.pc-attempt1
+
 if [ ! -d "/usr/local/log/pc-updatemanager" ] ; then
    mkdir -p /usr/local/log/pc-updatemanager
 fi
 OLOG="/usr/local/log/pc-updatemanager/upgrade.log"
 clear
-
-# Move back old /etc/rc-orig
-cp /etc/rc-orig /etc/rc
-
-# Now lets run sysctl, in case new version of linux compat was enabled
-/sbin/sysctl -f /etc/sysctl.conf
 
 # If the update left us without /root/.cshrc /root/.profile, due to hard-link funk, fix it
 if [ ! -e "/root/.cshrc" ] ; then
@@ -48,29 +53,34 @@ if [ ! -e "/root/.profile" ] ; then
   cp /.profile /root/.profile.
 fi
 
-# Move the new rc file away, keep this upgrade file in place in case the system resets
-# during the long pkg installation process
-cp /etc/rc /etc/rc-orig
-cp /etc/rc-update /etc/rc
-
 echo "Preparing to do pkg installation..."
 sleep 5
 
-# Copy the 10.1 RC file
 clear
 sh /.doPkgUp.sh 2>&1 | tee -a $OLOG
 sync
 rm /.doPkgUp.sh
 
+# Post update scripts
+UPDATEDOTDPOST="/usr/local/etc/pcupdate.d/post"
+if [ -d "${UPDATEDOTDPOST}" ] ; then
+  for post in `ls ${UPDATEDOTDPOST}`
+  do
+    if [ "$post" = "README" ] ; then continue ; fi
+    echo "Running post-update script: $post"
+    sh ${UPDATEDOTDPOST}/${post} "$1"
+    if [ $? -ne 0 ] ; then
+       echo "WARNING: Failed running post-update script: $post"
+    fi
+  done
+fi
+
 # Move the original RC files back
 mv /etc/rc-orig /etc/rc
 rm /etc/rc-update
 rm /etc/rc-doupdate
-
-if [ -e "/boot/grub/grub.cfg" ] ; then
-  # Update the grub config, since modules may have changed
-  grub-mkconfig -o /boot/grub/grub.cfg
-fi
+rm /etc/beadm
+rm /var/.pc-attempt1
 
 echo "Finished pkg installation.. Preparing to reboot...."
 sleep 10

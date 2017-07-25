@@ -1140,14 +1140,14 @@ update_pkgs_only_stage2() {
   if [ "$FULLUPDATE" = "YES" ] ; then
     # We are doing a forced / full update, lets nuke and re-install all
     prep_pkgs_chroot "pkg"
-    install_pkgs_chroot
+    prep_rc_script_install
   else
     # Lets attempt a traditional PKG upgrade, fallback to full if that fails
     do_lite_pkgupdate_chroot
     if [ $? -ne 0 ] ; then
       echo_log "Failed incremental pkg upgrade! Doing full package upgrade now."
       prep_pkgs_chroot "pkg"
-      install_pkgs_chroot
+      prep_rc_script_install
     fi
   fi
   umount_stage_be
@@ -1157,7 +1157,7 @@ update_pkgs_only_stage2() {
     pc-systemflag PKGUPDATE SUCCESS #set the system flag that packages are up to date
   fi
 
-  run_update_post "PKG"
+  #run_update_post "PKG"
 }
 
 update_world_and_pkgs()
@@ -1544,13 +1544,18 @@ dl_pkgs()
 
 prep_rc_script_install()
 {
+  # Clear the trigger file
+  rm ${STAGEMNT}/var/.pc-attempt1 2>/dev/null
+
   # Now prep the RC script to do the rest of the upgrade after reboot
-  rc_halt_cleanup "chroot ${STAGEMNT} mv /etc/rc /etc/rc-orig"
-  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/proc"
-  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/sys"
-  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/usr"
-  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/dev"
-  rc_halt_cleanup "chroot ${STAGEMNT} mkdir -p /compat/linux/run"
+  rc_halt_cleanup "mv ${STAGEMNT}/etc/rc ${STAGEMNT}/etc/rc-orig"
+  rc_halt_cleanup "mkdir -p ${STAGEMNT}/compat/linux/proc"
+  rc_halt_cleanup "mkdir -p ${STAGEMNT}/compat/linux/sys"
+  rc_halt_cleanup "mkdir -p ${STAGEMNT}/compat/linux/usr"
+  rc_halt_cleanup "mkdir -p ${STAGEMNT}/compat/linux/dev"
+  rc_halt_cleanup "mkdir -p ${STAGEMNT}/compat/linux/run"
+  rc_halt_cleanup "cp /usr/local/sbin/beadm ${STAGEMNT}/etc/beadm"
+  rc_halt_cleanup "chmod 755 ${STAGEMNT}/etc/beadm"
   rc_halt_cleanup "cp ${PROGDIR}/rc-update ${STAGEMNT}/etc/rc"
   rc_halt_cleanup "cp ${PROGDIR}/rc-update ${STAGEMNT}/etc/rc-update"
   rc_halt_cleanup "cp ${PROGDIR}/rc-doupdate ${STAGEMNT}/etc/rc-doupdate"
@@ -1611,6 +1616,9 @@ mount_stage_be()
   if [ ! -d "$STAGEMNT" ] ; then mkdir -p $STAGEMNT; fi
   umount -f $STAGEMNT/dev 2>/dev/null >/dev/null
   umount -f $STAGEMNT 2>/dev/null >/dev/null
+
+  # Save list of previous packages
+  ${PKG_CMD} info >${STAGEMNT}/previous-pkg-list
 
   # Mount the BE
   rc_halt "beadm mount $STAGEBE $STAGEMNT"
@@ -1932,9 +1940,11 @@ if [ ! -d \"/usr/local/log/pc-updatemanager\" ] ; then
   mkdir -p /usr/local/log/pc-updatemanager
 fi
 touch /install-pkg-list
+touch /previous-pkg-list
 touch /removed-pkg-list
 touch /failed-pkg-list
 mv /install-pkg-list /usr/local/log/pc-updatemanager/
+mv /previous-pkg-list /usr/local/log/pc-updatemanager/
 mv /removed-pkg-list /usr/local/log/pc-updatemanager/
 mv /failed-pkg-list /usr/local/log/pc-updatemanager/
 
@@ -1961,6 +1971,10 @@ umount_stage_be()
   if [ ! -d "${STAGEMNT}/usr/local/log/pc-updatemanager" ] ; then
      mkdir -p "${STAGEMNT}/usr/local/log/pc-updatemanager"
   fi
+
+  # Save the old BE name
+  oldBE=`beadm list | grep ' / ' | awk '{print $1}'`
+  echo "${oldBE}" > ${STAGEMNT}/var/.lastGoodBE
 
   echo_log "Copy upgrade.log to new BE..."
   rc_halt_cleanup "cp ${PKGUPGRADELOG} ${STAGEMNT}/usr/local/log/pc-updatemanager/upgrade.log"
