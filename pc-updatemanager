@@ -55,6 +55,10 @@ if [ -e "/etc/defaults/trueos-server" ] ; then
   SYSTYPE="SERVER"
 fi
 
+# Fix some issues with pkg trying to go non-interactive
+ASSUME_ALWAYS_YES="YES"
+export ASSUME_ALWAYS_YES
+
 do_self_bootstrap() {
   # Only do this as root
   if [ `id -u` != "0" ] ; then return 0; fi
