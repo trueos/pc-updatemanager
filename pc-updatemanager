@@ -1354,7 +1354,7 @@ build_pkg_list()
   echo "$SYSBASEORIGIN" > ${STATEDIR}/.sysbaseorigin
 
   # Build top-level list of pkgs installed
-  ${PKG_CMD} query -e '%#r=0' '%o %n-%v' | sort | grep -v 'ports-mgmt/pkg ' | grep -v 'misc/trueos-desktop ' | grep -v 'misc/trueos-server ' > $OLDPKGLIST
+  ${PKG_CMD} query -e '%a = 0' '%o %n-%v' | grep -v "^base" | sort | grep -v 'ports-mgmt/pkg ' | grep -v 'misc/trueos-desktop ' | grep -v 'misc/trueos-server ' > $OLDPKGLIST
 
   # If GRUB is used for boot, require it to be installed
   if [ -e "/boot/grub/grub.cfg" ]; then
@@ -1621,15 +1621,15 @@ mount_stage_be()
   umount -f $STAGEMNT/dev 2>/dev/null >/dev/null
   umount -f $STAGEMNT 2>/dev/null >/dev/null
 
-  # Save list of previous packages
-  ${PKG_CMD} info >${STAGEMNT}/previous-pkg-list
-
   # Mount the BE
   rc_halt "beadm mount $STAGEBE $STAGEMNT"
   if [ "$doPkgUpdates" = "YES" ] ; then
     rc_halt_cleanup "cp $NEWPKGLIST ${STAGEMNT}/install-pkg-list"
   fi
   rc_halt_cleanup "mount -t devfs devfs ${STAGEMNT}/dev"
+
+  # Save list of previous packages
+  ${PKG_CMD} info >${STAGEMNT}/previous-pkg-list
 
   # Copy over Xorg.0.log since we probe that file on trueos-desktop
   if [ -e "/var/log/Xorg.0.log" ] ; then
@@ -1955,6 +1955,7 @@ mv /install-pkg-list /usr/local/log/pc-updatemanager/
 mv /previous-pkg-list /usr/local/log/pc-updatemanager/
 mv /removed-pkg-list /usr/local/log/pc-updatemanager/
 mv /failed-pkg-list /usr/local/log/pc-updatemanager/
+pkg info > /usr/local/log/pc-updatemanager/current-pkg-list
 
 echo \"Updating pkgng config...\"
 /usr/local/bin/pc-updatemanager syncconf
