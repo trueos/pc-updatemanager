@@ -46,8 +46,18 @@ start()
 {
 	init_config
 	ebegin "Starting $name"
+
+	trueos_ipfsflags=""
+	if [ -e "/usr/local/etc/trueos.conf" ]; then
+		# Check if we are in private or public mode
+		mode=`grep "^IPFS_MODE:" /usr/local/etc/trueos.conf | awk '{print $2}'`
+		if [ -n "$mode" -a "$mode" = "private" ] ; then
+			trueos_ipfsflags="${trueos_ipfsflags} --routing=dhtclient"
+		fi
+	fi
+
 	start-stop-daemon --start -1 /var/log/trueos-ipfs.log -b -m --pidfile /var/run/trueos-ipfs.pid \
-		--exec $BIN -- -c $config daemon
+		--exec $BIN -- -c $config daemon $trueosipfs_flags
 	eend $?
 }
 
