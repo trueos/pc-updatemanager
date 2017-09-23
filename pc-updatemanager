@@ -1293,8 +1293,15 @@ setup_pkgng_newrepo_conf() {
           *) ;;
   esac
 
+  # Create the repo config dirs
   rm -rf /usr/local/tmp/.updateRepo >/dev/null 2>/dev/null
   mkdir -p /usr/local/tmp/.updateRepo
+
+  # Copy over all the repos and remove the trueos ones we will replace
+  cp /etc/pkg/*.conf /usr/local/tmp/.updateRepo/ 2>/dev/null
+  cp /usr/local/etc/pkg/repos/*.conf /usr/local/tmp/.updateRepo/ 2>/dev/null
+  rm /usr/local/tmp/.updateRepo/trueos-base.conf 2>/dev/null
+  rm /usr/local/tmp/.updateRepo/trueos.conf 2>/dev/null
 
   # Now create standard trueos.conf file
   if [ "$PACKAGE_SET" = "CUSTOM" -a -n "$CUSTOM_URL" ] ; then
@@ -1489,6 +1496,8 @@ dl_pkgs()
 
     # Check if this pkg exists in the new repo
     unset FETCHFILENAME
+    echo_log "Determining package name for: ${pkgOrigin}"
+    echo "Determining package name for ${pkgOrigin}" >> ${PKGUPGRADELOG}
     FETCHFILENAME="`${PKG_CMD} ${PKG_FLAG} rquery -U '%n-%v' $pkgOrigin 2>/dev/null | head -n 1`"
     if [ -z "$FETCHFILENAME" ] ; then
        OBSOLETE_PACKAGES="${pkgOrigin} ${OBSOLETE_PACKAGES}"
