@@ -33,7 +33,7 @@ if [ -e "/var/.pc-attempt1" ] ; then
    echo "The previous upgrade attempt failed!"
    echo "Rolling back to last known good BE..."
    oldBE=`cat /var/.lastGoodBE`
-   /etc/beadm activate $oldBE   
+   /etc/beadm activate $oldBE
 fi
 
 # Set indicator that this is first attempt at upgrading
@@ -84,7 +84,7 @@ rm /var/.pc-attempt1
 
 echo "Finished pkg installation.. Preparing to reboot...."
 sleep 10
-   
+
 clear
 echo "Rebooting..."
 /sbin/reboot

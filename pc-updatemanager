@@ -1708,8 +1708,18 @@ do_lite_pkgupdate_chroot()
     return 1
   fi
 
+  # Verify the base package was installed
+  chroot ${STAGEMNT} pkg-static ${PKG_CFLAG} ${PKG_FLAG} info -q $SYSBASEORIGIN
+  if [ $? -ne 0 ] ; then
+    echo_log "Lite upgrade removed $SYSBASEORIGIN, falling back to full update"
+    return 1
+  fi
+
   # Set all pkgs as not auto-installed, so pkg autoremove doesn't touch them
   chroot ${STAGEMNT} pkg-static ${PKG_CFLAG} ${PKG_FLAG} set -y -A 00 -g FreeBSD-\*
+
+  # Lock the TrueOS base package
+  chroot ${STAGEMNT} pkg-static ${PKG_CFLAG} ${PKG_FLAG} lock -y ${SYSBASEORIGIN}
 
   # Looks like the upgrade was good! Lets move back the PKG repo
   echo_log "Moving updated pkg repo..."
@@ -1911,6 +1921,16 @@ if [ \$? -ne 0 ] ; then
   echo "FAILED INSTALLING $SYSBASEORIGIN"
   exit 1
 fi
+
+# Verify the base package was installed
+pkg-static \${PKG_CFLAG} ${PKG_FLAG} info -q ${SYSBASEORIGIN}
+if [ \$? -ne 0 ] ; then
+  echo "FAILED INSTALLING ${SYSBASEORIGIN}"
+  exit 1
+fi
+
+# Lock the TrueOS base package
+pkg-static \${PKG_CFLAG} ${PKG_FLAG} lock -y ${SYSBASEORIGIN}
 
 # Update kernel hints
 kldxref /boot/kernel /boot/modules
