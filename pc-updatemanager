@@ -190,8 +190,8 @@ UPDATECONF="${PROGDIR}/conf/sysupdate.conf"
 ARCH=`uname -m`
 
 # Location for master IPFS files which list latest stable/unstable hashes
-IPFS_HASHFILE_STABLE="https://raw.githubusercontent.com/trueos/pc-updatemanager/master/trueos-ipfs-stable"
-IPFS_HASHFILE_UNSTABLE="https://raw.githubusercontent.com/trueos/pc-updatemanager/master/trueos-ipfs-unstable"
+IPFS_HASHFILE_STABLE="https://www.trueos.org/updates/trueos-ipfs-stable"
+IPFS_HASHFILE_UNSTABLE="https://www.trueos.org/updates/trueos-ipfs-unstable"
 
 # Patchset Data
 PATCHSERVER="`cat ${UPDATECONF} | grep '^UPDATESERVER:' | cut -d ' ' -f 2`"
