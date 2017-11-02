@@ -1382,6 +1382,12 @@ dl_pkgs()
 {
   unset OBSOLETE_PACKAGES
 
+  # Setup the removedpkglist
+  if [ ! -e "${STATEDIR}/.removed-pkg-list" ] ; then
+    rm ${STATEDIR}/.removed-pkg-list
+  fi
+  touch ${STATEDIR}/.removed-pkg-list
+
   # Make sure PKG itself is upgraded
   echo_log "Checking for updates to ports-mgmt/pkg.."
   ${PKG_CMD} upgrade -y ports-mgmt/pkg
@@ -1512,6 +1518,7 @@ dl_pkgs()
        echo_log "No such package in new repo: $pkgOrigin"
        echo "*****" >> $PKGUPGRADELOG
        echo "No such package in new repo: $pkgOrigin" >> $PKGUPGRADELOG
+       echo "$pkgOrigin" >> ${STATEDIR}/.removed-pkg-list
        echo "*****" >> $LOGOUT
        echo "*****" >> $PKGUPGRADELOG
        continue
@@ -2026,6 +2033,7 @@ umount_stage_be()
 
   echo_log "Copy upgrade.log to new BE..."
   rc_halt_cleanup "cp ${PKGUPGRADELOG} ${STAGEMNT}/usr/local/log/pc-updatemanager/upgrade.log"
+  rc_halt_cleanup "cp ${STATEDIR}/.removed-pkg-list ${STAGEMNT}/removed-pkg-list"
 
   # Figure out the name of the new BE
   echo_log "Determine new BE name..."
