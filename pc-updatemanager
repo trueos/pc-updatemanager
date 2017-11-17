@@ -1537,7 +1537,7 @@ dl_pkgs()
       sleep 2
       echo_log " - Failure: Trying again"
       echo " - Failure: Trying again" >> ${PKGUPGRADELOG}
-      ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y $pkgOrigin 2>&1 >${PKGUPGRADELOG}
+      ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y $pkgOrigin 2>&1 >>${PKGUPGRADELOG}
       _err=$?
       tail -n 1 ${PKGUPGRADELOG} | grep -q "failed checksum"
       if [ $_err -ne 0 -o $? -eq 0 -o ! -e "${REALPKGDLCACHE}/${FETCHFILENAME}" ]; then
