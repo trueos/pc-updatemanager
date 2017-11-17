@@ -163,7 +163,7 @@ do_ipfs_bootstrap() {
 }
 
 # Check if we need to try a self-update
-if [ -z "$DISABLE_UPDATE_BOOTSTRAP" -a -n "${1}" -a "${1}" != "doshutdownupdate" ] ; then
+if [ -z "$DISABLE_UPDATE_BOOTSTRAP" -a -n "${1}" -a "${1}" != "doshutdownupdate" -a "$1" != "startupdate" ] ; then
 
   export DISABLE_UPDATE_BOOTSTRAP="YES"
 
@@ -2274,8 +2274,15 @@ update_world_and_pkgs) update_world_and_pkgs_stage2 >${TTY} 2>${TTY}
 
 prep_update_shutdown() {
   echo "$1" > ${STATEDIR}/shutdown-update-trigger
-  touch_reboot
-  echo_log "Your update is ready to install. Please shutdown to finish the update process."
+  ACTIVE_UPDATE=$(sysrc -n trueos_active_update)
+  if [ -n "$ACTIVE_UPDATE" ] ; then
+    echo_log "Your update is staged and ready to install."
+    echo_log "To reboot and begin the update run # pc-updatemanager startupdate"
+    touch /tmp/.trueos-update-staged
+  else
+    touch_reboot
+    echo_log "Your update is ready to install. Please shutdown to finish the update process."
+  fi
   exit 0
 }
 
@@ -2419,6 +2426,15 @@ while [ $# -gt 0 ] ; do
 		  exit 0
                   break
                   ;;
+     startupdate) if [ ! -e "/tmp/.trueos-update-staged" ] ; then
+	            echo "No update staged. Please run ${0} pkgupdate first"
+		    exit 1
+		  fi
+	          echo "Preparing to reboot and upgrade!"
+		  touch_reboot
+		  sleep 2
+		  shutdown -r now
+	          ;;
 	 install) require_root
 		  rotate_log
 		  get_update_file
