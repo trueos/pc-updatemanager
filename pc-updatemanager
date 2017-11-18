@@ -217,6 +217,15 @@ if [ "$CDN_TYPE" = "IPFS" ] ; then
     rc-update add ipfs-go >/dev/null 2>/dev/null
     service ipfs-go start
   fi
+
+  # Set new default timeouts for pkg fetch
+  if [ -e "/usr/local/etc/pkg.conf" ] ; then
+    cat /usr/local/etc/pkg.conf | grep -q "FETCH_TIMEOUT"
+    if [ $? -ne 0 ] ; then
+      echo "FETCH_TIMEOUT: 360" >> /usr/local/etc/pkg.conf
+    fi
+  fi
+
 fi
 
 # Check the PACKAGE_SET variable
