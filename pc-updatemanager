@@ -2237,6 +2237,9 @@ prep_update_shutdown() {
     echo_log "Your update is staged and ready to install."
     echo_log "To reboot and begin the update run # pc-updatemanager startupdate"
     touch /tmp/.trueos-update-staged
+    if [ -e "${NEWPKGLIST}" ] ; then
+      cat ${NEWPKGLIST} >> /tmp/.trueos-update-staged
+    fi
   else
     touch_reboot
     echo_log "Your update is ready to install. Please shutdown to finish the update process."
