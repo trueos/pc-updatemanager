@@ -45,6 +45,9 @@ PROGDIR="/usr/local/share/trueos/pc-updatemanager" ; export PROGDIR
 # Set the pub openssl key
 SKEY="${PROGDIR}/conf/security.key" ; export SKEY
 
+# How long before pkg times out
+FETCH_TIMEOUT="600" ; export FETCH_TIMEOUT
+
 # Start by sourcing /etc/profile
 # This grabs any HTTP_ / FTP_ PROXY variables
 . /etc/profile
