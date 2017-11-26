@@ -380,7 +380,10 @@ echo_log()
 
 get_latest_ipfs_hash()
 {
-  case $PACKAGE_SET in
+  PSET="PRODUCTION"
+  _pkgChk="`sed -n 's/^PACKAGE_SET: //p' ${trueos_ETCCONF} 2>/dev/null | awk '{print $1}'`"
+  if [ -n "${_pkgChk}" ] ; then PSET="$_pkgChk" ; fi
+  case $PSET in
 	    UNSTABLE) _fUrl="${IPFS_HASHFILE_UNSTABLE}" ;;
 		*) _fUrl="${IPFS_HASHFILE_STABLE}" ;;
   esac
