@@ -1231,17 +1231,17 @@ setup_pkgng_newrepo_conf() {
 	get_latest_ipfs_hash
 	ipfshash="${IPFS_HASH}"
 	PACKAGE_SET="CUSTOM"
-	CUSTOM_URL="http://127.0.0.1:12034/ipfs/${ipfshash}/${ARCH}"
+	CUSTOM_URL="http://127.0.0.1:8080/ipfs/${ipfshash}/${ARCH}"
 
-	# Make sure the trueos IPFS daemon is running
-	service trueos-ipfs status >/dev/null 2>/dev/null
+	# Make sure the IPFS daemon is running
+	service ipfs-go status >/dev/null 2>/dev/null
 	if [ $? -ne 0 ] ; then
-		 service trueos-ipfs start #>/dev/null 2>/dev/null
+		 service ipfs-go start #>/dev/null 2>/dev/null
 	fi
 	# Make sure the daemon is set to run at startup
-	rc-update show default | grep -q trueos-ipfs
+	rc-update show default | grep -q ipfs-go
 	if [ $? -ne 0 ] ; then
-		rc-update add trueos-ipfs default #>/dev/null 2>dev/null
+		rc-update add ipfs-go default #>/dev/null 2>dev/null
 	fi
   fi
 
