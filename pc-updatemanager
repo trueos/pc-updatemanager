@@ -1342,6 +1342,54 @@ build_pkg_list()
   echo "-----------------------------------------------" >> $PKGUPGRADELOG
 }
 
+###
+# Helper to run pkg fetch commands in a loop since timeouts may not be fatal if we try again
+###
+pkg_fetch_verify() {
+
+  local fetchPkg="$1"
+  local fetchPkgFile="$2"
+  local fetchRetries="$3"
+
+  if [ -z "$fetchRetries" ] ; then
+    fetchRetries="0"
+    echo_log "Verifying / fetching packages for $fetchPkg - $fetchPkgFile"
+    echo "Verifying / fetching packages for $fetchPkg - $fetchPkgFile" >> ${PKGUPGRADELOG}
+  fi
+
+  if [ $fetchRetries -gt 3 ] ; then
+     # Exeeded the number of retry attempts
+     # Time to fail out
+     if [ -e "/usr/local/bin/pc-systemflag" ] ; then
+       pc-systemflag PKGUPDATE ERROR
+     fi
+     echo_log "Failed fetching: ports-mgmt/pkg - $fetchPkgFile" >> ${PKGUPGRADELOG}
+     exit_err "Failed fetching: ports-mgmt/pkg - $fetchPkgFile"
+  fi
+
+  # Increment number of retry attempts
+  fetchRetries=$(expr $fetchRetries + 1)
+
+  # Attempt to fetch the package
+  ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y $fetchPkg 2>&1 | tee -a ${PKGUPGRADELOG}
+  _err=$?
+  tail -n 1 ${PKGUPGRADELOG} | grep -q "failed checksum"
+  if [ $_err -ne 0 -o $? -eq 0 ]; then
+    pkg_fetch_verify "$fetchPkg" "$fetchPkgFile" "$fetchRetries"
+  fi
+
+  REALPKGDLCACHE="${PKGDLCACHE}"
+  # PKGNG lies, we need to verify if the package was really downloaded
+  if [ ! -e "${PKGDLCACHE}/${fetchPkgFile}" ] ; then
+     # Also check All/ since pkg docs are rather unclear about if that will be used or not
+     if [ -e "${PKGDLCACHE}/All/${fetchPkgFile}" ] ; then
+        REALPKGDLCACHE="${PKGDLCACHE}/All"
+     else
+        pkg_fetch_verify "$fetchPkg" "$fetchPkgFile" "$fetchRetries"
+     fi
+  fi
+}
+
 dl_pkgs()
 {
   unset OBSOLETE_PACKAGES
@@ -1399,73 +1447,35 @@ dl_pkgs()
      exit_err "Failed verification of fbsd-distrib.txz"
   fi
 
-  # Save the PKGNG filename
+  ###
+  # Fetch the ports-mgmt/pkg
+  ###
   PKGFILENAME="`${PKG_CMD} ${PKG_FLAG} rquery -U '%n-%v' ports-mgmt/pkg 2>/dev/null | head -n 1`.txz"
 
-  # First off, fetch the pkgng pkg
-  echo_log "Verifying / fetching packages for ports-mgmt/pkg - $PKGFILENAME"
-  echo "Verifying / fetching packages for ports-mgmt/pkg - $PKGFILENAME" >> ${PKGUPGRADELOG}
+  # Update the database once
   ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} update | tee -a ${PKGUPGRADELOG}
-  ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y ports-mgmt/pkg 2>&1 | tee -a ${PKGUPGRADELOG}
-  _err=$?
-  tail -n 1 ${PKGUPGRADELOG} | grep -q "failed checksum"
-  if [ $_err -ne 0 -o $? -eq 0 ]; then
-     if [ -e "/usr/local/bin/pc-systemflag" ] ; then
-       pc-systemflag PKGUPDATE ERROR
-     fi
-     echo_log "Failed fetching: ports-mgmt/pkg - $PKGFILENAME" >> ${PKGUPGRADELOG}
-     exit_err "Failed fetching: ports-mgmt/pkg - $PKGFILENAME"
-  fi
 
-  REALPKGDLCACHE="${PKGDLCACHE}"
-  # PKGNG lies, we need to verify if the package was really downloaded
-  if [ ! -e "${PKGDLCACHE}/${PKGFILENAME}" ] ; then
-     # Also check All/ since pkg docs are rather unclear about if that will be used or not
-     if [ -e "${PKGDLCACHE}/All/${PKGFILENAME}" ] ; then
-        REALPKGDLCACHE="${PKGDLCACHE}/All"
-     else
-        if [ -e "/usr/local/bin/pc-systemflag" ] ; then
-          pc-systemflag PKGUPDATE ERROR
-        fi
-	echo_log "Failed downloading ports-mgmt/pkg with: $PKG_CMD $PKG_FLAG fetch -d -y ports-mgmt/pkg" >> ${PKGUPGRADELOG}
-        exit_err "Failed downloading ports-mgmt/pkg with: $PKG_CMD $PKG_FLAG fetch -d -y ports-mgmt/pkg"
-     fi
-  fi
+  # Download the ports-mgmt/pkg commands
+  pkg_fetch_verify "ports-mgmt/pkg" "$PKGFILENAME"
 
   # Save State of REALPKGDLCACHE
   echo "${REALPKGDLCACHE}" > ${STATEDIR}/.realpkgdlcache
 
-  # Fetch the SYSBASE packages, halt if this fails
+  ###
+  # Fetch the SYSBASE
+  ###
   SYSBASEFILENAME="`${PKG_CMD} ${PKG_FLAG} rquery -U '%n-%v' $SYSBASE 2>/dev/null | head -n 1`.txz"
-  echo_log "Verifying / fetching packages for ${SYSBASE} - $SYSBASEFILENAME"
-  echo "Verifying / fetching packages for ${SYSBASE} - $SYSBASEFILENAME" >> ${PKGUPGRADELOG}
-  ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y ${SYSBASE} 2>&1 >>${PKGUPGRADELOG}
-  _err=$?
-  tail -n 1 ${PKGUPGRADELOG} | grep -q "failed checksum"
-  if [ $_err -ne 0 -o $? -eq 0 ]; then
-     if [ -e "/usr/local/bin/pc-systemflag" ] ; then
-       pc-systemflag PKGUPDATE ERROR
-     fi
-     echo_log "Failed fetching: $SYSBASE - $SYSBASEFILENAME"
-     echo "Failed fetching: $SYSBASE - $SYSBASEFILENAME" >> ${PKGUPGRADELOG}
-     exit_err "Failed fetching: $SYSBASE - $SYSBASEFILENAME"
-  fi
 
-  # PKGNG lies, we need to verify if the package was really downloaded
-  if [ ! -e "${REALPKGDLCACHE}/${SYSBASEFILENAME}" ] ; then
-     if [ -e "/usr/local/bin/pc-systemflag" ] ; then
-       pc-systemflag PKGUPDATE ERROR
-     fi
-     echo_log "Failed downloading $SYSBASE with: $PKG_CMD $PKG_FLAG fetch -d -y $SYSBASE"
-     echo "Failed downloading $SYSBASE with: $PKG_CMD $PKG_FLAG fetch -d -y $SYSBASE" >> ${PKGUPGRADELOG}
-     exit_err "Failed downloading $SYSBASE with: $PKG_CMD $PKG_FLAG fetch -d -y $SYSBASE"
-  fi
+  # Download
+  pkg_fetch_verify "$SYSBASE" "$SYSBASEFILENAME"
 
   echo "$SYSBASEORIGIN" > ${STATEDIR}/.sysbaseorigin
   echo "$SYSBASEFILENAME" > ${STATEDIR}/.sysbasefilename
   export SYSBASEFILENAME SYSBASEORIGIN
 
+  ###
   # Now start fetching all the update packages
+  ###
   while read pkgLine
   do
     pkgOrigin="`echo $pkgLine | cut -d ' ' -f 1`"
@@ -1489,30 +1499,8 @@ dl_pkgs()
     fi
     FETCHFILENAME="${FETCHFILENAME}.txz"
 
-    # Fetch the pkg now
-    echo_log "Verifying / fetching packages for ${pkgOrigin} - $FETCHFILENAME"
-    echo "Verifying / fetching packages for ${pkgOrigin} - $FETCHFILENAME" >> ${PKGUPGRADELOG}
-    ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y $pkgOrigin 2>&1 >>${PKGUPGRADELOG}
-    # PKGNG lies, we need to verify if the package was really downloaded as well
-    _err=$?
-    tail -n 1 ${PKGUPGRADELOG} | grep -q "failed checksum"
-    if [ $_err -ne 0 -o $? -eq 0 -o ! -e "${REALPKGDLCACHE}/${FETCHFILENAME}" ]; then
-      #Try one more time
-      sleep 2
-      echo_log " - Failure: Trying again"
-      echo " - Failure: Trying again" >> ${PKGUPGRADELOG}
-      ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y $pkgOrigin 2>&1 >>${PKGUPGRADELOG}
-      _err=$?
-      tail -n 1 ${PKGUPGRADELOG} | grep -q "failed checksum"
-      if [ $_err -ne 0 -o $? -eq 0 -o ! -e "${REALPKGDLCACHE}/${FETCHFILENAME}" ]; then
-       #Check again for success
-        echo_log " - Failed again: Try again later"
-        echo " - Failed again: Try again later" >> ${PKGUPGRADELOG}
-        echo_log "*****" ${PKGUPGRADELOG}
-        echo_log "Failed fetching: $pkgOrigin" >> ${PKGUPGRADELOG}
-        exit_err "Failed fetching: $pkgOrigin"
-      fi
-    fi
+    # Download
+    pkg_fetch_verify "$pkgOrigin" "$FETCHFILENAME"
 
     echo "$pkgOrigin $FETCHFILENAME" >> $NEWPKGLIST
   done < $OLDPKGLIST
