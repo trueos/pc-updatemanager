@@ -1373,7 +1373,7 @@ pkg_fetch_verify() {
   # Attempt to fetch the package
   ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y $fetchPkg 2>&1 | tee -a ${PKGUPGRADELOG}
   _err=$?
-  tail -n 1 ${PKGUPGRADELOG} | grep -q "failed checksum"
+  tail -n 1 ${PKGUPGRADELOG} | grep -q -e "failed checksum" -e "timed out"
   if [ $_err -ne 0 -o $? -eq 0 ]; then
     pkg_fetch_verify "$fetchPkg" "$fetchPkgFile" "$fetchRetries"
   fi
@@ -1508,14 +1508,21 @@ dl_pkgs()
   # Doing a world upgrade, lets fetch FreeBSD packages
   echo_log "Verifying / fetching packages for FreeBSD Base"
   echo "Verifying / fetching packages for FreeBSD Base" >> ${PKGUPGRADELOG}
-  ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y -g 'FreeBSD-*' 2>&1 >>${PKGUPGRADELOG}
-  _err=$?
-  tail -n 1 ${PKGUPGRADELOG} | grep -q "failed checksum"
-  if [ $_err -ne 0 -o $? -eq 0 ]; then
-    echo_log "*****" ${PKGUPGRADELOG}
-    echo_log "Failed fetching: FreeBSD Base" >> ${PKGUPGRADELOG}
-    exit_err "Failed fetching: FreeBSD Base"
-  fi
+  attempts=0
+  while :
+  do
+    attempts=$(expr $attempts + 1)
+    ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y -g 'FreeBSD-*' 2>&1 >>${PKGUPGRADELOG}
+    _err=$?
+    tail -n 1 ${PKGUPGRADELOG} | grep -q "failed checksum"
+    if [ $_err -ne 0 -o $? -eq 0 ]; then
+      if [ $attempts -gt 3 ] ; then
+        echo_log "*****" ${PKGUPGRADELOG}
+        echo_log "Failed fetching: FreeBSD Base" >> ${PKGUPGRADELOG}
+        exit_err "Failed fetching: FreeBSD Base"
+      fi
+    fi
+  done
 
   echo_log "-----------------------------------------------"
   echo "-----------------------------------------------" >> ${PKGUPGRADELOG}
