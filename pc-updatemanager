@@ -2235,7 +2235,7 @@ update_world_and_pkgs) update_world_and_pkgs_stage2 >${TTY} 2>${TTY}
 
 prep_update_shutdown() {
   echo "$1" > ${STATEDIR}/shutdown-update-trigger
-  ACTIVE_UPDATE=$(sysrc -n trueos_active_update)
+  ACTIVE_UPDATE=$(sysrc -q -n trueos_active_update)
   if [ -n "$ACTIVE_UPDATE" ] ; then
     echo_log "Your update is staged and ready to install."
     echo_log "To reboot and begin the update run # pc-updatemanager startupdate"
