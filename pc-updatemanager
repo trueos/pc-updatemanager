@@ -218,7 +218,7 @@ if [ "$CDN_TYPE" = "IPFS" ] ; then
   rc-update | grep -q ipfs-go
   if [ $? -ne 0 ] ; then
     rc-update add ipfs-go >/dev/null 2>/dev/null
-    service ipfs-go start
+    (service ipfs-go start >/dev/null 2>/dev/null) &
   fi
 
   # Set new default timeouts for pkg fetch
@@ -443,7 +443,8 @@ setup_pkgng_conf() {
 	  # Make sure the trueos IPFS daemon is running
 	  service ipfs-go status >/dev/null 2>/dev/null
 	  if [ $? -ne 0 ] ; then
-		  service ipfs-go start #>/dev/null 2>/dev/null
+		  (service ipfs-go start >/dev/null 2>/dev/null ) &
+		  sleep 2
 	  fi
 	  # Make sure the daemon is set to run at startup
 	  rc-update show default | grep -q ipfs-go
@@ -1235,6 +1236,7 @@ setup_pkgng_newrepo_conf() {
 
   if [ "$CDN_TYPE" = "IPFS" ] ; then
 	get_latest_ipfs_hash
+	echo "$IPFS_HASH" > /var/db/trueos-pkg-ipfs-next
 	ipfshash="${IPFS_HASH}"
 	PACKAGE_SET="CUSTOM"
 	CUSTOM_URL="http://127.0.0.1:8080/ipfs/${ipfshash}/${ARCH}"
@@ -1242,7 +1244,7 @@ setup_pkgng_newrepo_conf() {
 	# Make sure the IPFS daemon is running
 	service ipfs-go status >/dev/null 2>/dev/null
 	if [ $? -ne 0 ] ; then
-		 service ipfs-go start #>/dev/null 2>/dev/null
+		(service ipfs-go start >/dev/null 2>/dev/null) &
 	fi
 	# Make sure the daemon is set to run at startup
 	rc-update show default | grep -q ipfs-go
@@ -1965,6 +1967,9 @@ mv /failed-pkg-list /usr/local/log/pc-updatemanager/
 pkg info > /usr/local/log/pc-updatemanager/current-pkg-list
 
 echo \"Updating pkgng config...\"
+if [ -e \"/var/db/trueos-pkg-ipfs-next\" ] ; then
+  mv /var/db/trueos-pkg-ipfs-next /var/db/trueos-pkg-ipfs
+fi
 /usr/local/bin/pc-updatemanager syncconf
 if [ \$? -ne 0 ] ; then exit 1; fi
 
