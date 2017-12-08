@@ -1791,6 +1791,10 @@ prep_pkgs_chroot()
      fi
   fi
 
+  # Workaround to issue in FreeBSD pkg base
+  chown root:operator ${STAGEMNT}/sbin/shutdown
+  chmod 4554 ${STAGEMNT}/sbin/shutdown
+
   # Next create the script to bootstrap pkgng
   echo "#!/bin/sh
 
