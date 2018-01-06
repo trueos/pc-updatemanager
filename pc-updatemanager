@@ -1514,7 +1514,7 @@ dl_pkgs()
   while :
   do
     attempts=$(expr $attempts + 1)
-    ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y -g 'FreeBSD-*' 2>&1 >>${PKGUPGRADELOG}
+    ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y -g 'FreeBSD-*' 2>&1 | tee -a ${PKGUPGRADELOG}
     _err=$?
     tail -n 1 ${PKGUPGRADELOG} | grep -q -e "failed checksum" -e "timed out"
     if [ $_err -ne 0 -o $? -eq 0 ]; then
