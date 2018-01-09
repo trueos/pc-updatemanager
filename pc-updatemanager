@@ -1629,6 +1629,15 @@ do_lite_pkgupdate_chroot()
   PACKAGE_BUILDING="YES"
   export PACKAGE_BUILDING
 
+  # This sucks, but we have to do it. If FreeBSD version gets bumped AT ALL, we need to do full-update
+  CRUNTIME="`${PKG_CMD} ${PKG_FLAG} query '%n-%v' FreeBSD-Runtime-development 2>/dev/null | head -n 1`"
+  NRUNTIME="`${PKG_CMD} ${PKG_FLAG} rquery -U '%n-%v' FreeBSD-Runtime-development 2>/dev/null | head -n 1`"
+  if [ "$CRUNTIME" != "$NRUNTIME" ] ; then
+    echo_log "FreeBSD base system update detected!"
+    echo_log "Falling back to full upgrade"
+    return 1
+  fi
+
   # Save the current ABI version of the system
   CURRENTABI=`grep "^#define __FreeBSD_version" /usr/include/sys/param.h | awk '{print $3}'`
 
@@ -1703,6 +1712,10 @@ do_lite_pkgupdate_chroot()
   rm -rf ${STAGEMNT}/var/db/pkg.preUpgrade 2>/dev/null
   mv ${STAGEMNT}/var/db/pkg ${STAGEMNT}/var/db/pkg.preUpgrade
   mv ${STAGEMNT}/var/db/pc-updatemanager/pkgdb ${STAGEMNT}/var/db/pkg
+
+  # Workaround to issue in FreeBSD pkg base
+  chown root:operator ${STAGEMNT}/sbin/shutdown
+  chmod 4554 ${STAGEMNT}/sbin/shutdown
 
   # Boot gets cranky if these go away
   mkdir -p ${STAGEMNT}/compat/linux/proc 2>/dev/null
