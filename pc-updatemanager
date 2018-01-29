@@ -1804,6 +1804,9 @@ prep_pkgs_chroot()
      fi
   fi
 
+  # Work around an issue with some kmod pkgs which can hang the box before upgrade happens
+  pkg -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} delete -y virtualbox-ose-kmod >>${LOGOUT} 2>>${LOGOUT}
+
   # Workaround to issue in FreeBSD pkg base
   chown root:operator ${STAGEMNT}/sbin/shutdown
   chmod 4554 ${STAGEMNT}/sbin/shutdown
