@@ -1792,7 +1792,7 @@ prep_pkgs_chroot()
 
   # Set all pkgs as not auto-installed, so pkg autoremove doesn't touch them
   echo_log "Marking FreeBSD packages as not auto-installed"
-  pkg -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} set -y -A 00 -g FreeBSD-\* >>${LOGOUT} 2>>${LOGOUT}
+  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} set -y -A 00 -g FreeBSD-\* >>${LOGOUT} 2>>${LOGOUT}
 
   # Check if something went horribly wrong
   if [ ! -e "${STAGEMNT}/bin/sh" ] ; then
@@ -1805,7 +1805,8 @@ prep_pkgs_chroot()
   fi
 
   # Work around an issue with some kmod pkgs which can hang the box before upgrade happens
-  pkg -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} delete -y virtualbox-ose-kmod >>${LOGOUT} 2>>${LOGOUT}
+  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} unlock -ay >>${LOGOUT} 2>>${LOGOUT}
+  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} delete -yg '*kmod*' >>${LOGOUT} 2>>${LOGOUT}
 
   # Workaround to issue in FreeBSD pkg base
   chown root:operator ${STAGEMNT}/sbin/shutdown
@@ -1984,7 +1985,7 @@ mv /install-pkg-list /usr/local/log/pc-updatemanager/
 mv /previous-pkg-list /usr/local/log/pc-updatemanager/
 mv /removed-pkg-list /usr/local/log/pc-updatemanager/
 mv /failed-pkg-list /usr/local/log/pc-updatemanager/
-pkg info > /usr/local/log/pc-updatemanager/current-pkg-list
+pkg-static info > /usr/local/log/pc-updatemanager/current-pkg-list
 
 echo \"Updating pkgng config...\"
 if [ -e \"/var/db/trueos-pkg-ipfs-next\" ] ; then
