@@ -1516,7 +1516,7 @@ dl_pkgs()
     attempts=$(expr $attempts + 1)
     ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y -g 'FreeBSD-*' 2>&1 | tee -a ${PKGUPGRADELOG}
     _err=$?
-    tail -n 1 ${PKGUPGRADELOG} | grep -q -e "failed checksum" -e "timed out"
+    tail -n 1 ${PKGUPGRADELOG} | grep -q -e "failed checksum" -e "timed out" -e "not found"
     if [ $_err -ne 0 -o $? -eq 0 ]; then
       if [ $attempts -gt 3 ] ; then
         echo_log "*****" ${PKGUPGRADELOG}
