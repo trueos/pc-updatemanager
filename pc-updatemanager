@@ -1296,7 +1296,7 @@ EOF
     cat /usr/local/etc/pkg/repos/trueos.conf.dist \
       | sed "s|trueos: |trueos-base: |g" \
       | sed "s|%VERSION%|$PKGVER|g" \
-      | sed "s|%ARCH%|$ARCH|g" >> /usr/local/tmp/.updateRepo/pkgUpdateRepo.conf
+      | sed "s|%ARCH%|${ARCH}-base|g" >> /usr/local/tmp/.updateRepo/pkgUpdateRepo.conf
   fi
 
   # Set the new PKG_FLAG to use this repo config
@@ -1403,8 +1403,8 @@ dl_pkgs()
   touch ${STATEDIR}/.removed-pkg-list
 
   # Make sure PKG itself is upgraded
-  echo_log "Checking for updates to ports-mgmt/pkg.."
-  ${PKG_CMD} upgrade -y ports-mgmt/pkg
+  #echo_log "Checking for updates to ports-mgmt/pkg.."
+  #${PKG_CMD} upgrade -y ports-mgmt/pkg
 
   # Update the DB first
   echo_log "Updating the package repo database..."
@@ -1807,6 +1807,7 @@ prep_pkgs_chroot()
   # Work around an issue with some kmod pkgs which can hang the box before upgrade happens
   pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} unlock -ay >>${LOGOUT} 2>>${LOGOUT}
   pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} delete -yg '*kmod*' >>${LOGOUT} 2>>${LOGOUT}
+  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} delete -yg '*nvidia-driver*' >>${LOGOUT} 2>>${LOGOUT}
 
   # Workaround to issue in FreeBSD pkg base
   chown root:operator ${STAGEMNT}/sbin/shutdown
