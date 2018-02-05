@@ -1822,6 +1822,12 @@ prep_pkgs_chroot()
   # Next create the script to bootstrap pkgng
   echo "#!/bin/sh
 
+run_cmd_wtee()
+{
+  ((((\${1} 2>&1 ; echo \$? >&3 ) | tee -a \${2} >&4 ) 3>&1) | (read xs; exit \$xs)) 4>&1
+  return \$?
+}
+
 # Copy over the trueos pkg fingerprints
 rm -rf /etc/pkg/trueos-fingerprints.previous 2>/dev/null
 mv /etc/pkg/trueos-fingerprints /etc/pkg/trueos-fingerprints.previous 2>/dev/null
@@ -1909,7 +1915,7 @@ do
   fi
 
   echo \"Installing \$pkgOrigin... \${pkgName}\"
-  pkg-static \${PKG_CFLAG} ${PKG_FLAG} add -f \${pkgName} 2>&1 | tee /pkg-add.log
+  run_cmd_wtee \"pkg-static \${PKG_CFLAG} ${PKG_FLAG} add -f \${pkgName}\" \"/pkg-add.log\"
   if [ \$? -ne 0 ] ; then
      echo \"Failed installing \${pkgOrigin}\"
      cat /pkg-add.log
@@ -1920,7 +1926,7 @@ done < /install-pkg-list
 rm /pkg-add.log
 
 echo \"Installing $SYSBASEORIGIN... $SYSBASEFILENAME\"
-pkg-static \${PKG_CFLAG} ${PKG_FLAG} add -f $SYSBASEFILENAME 2>&1 | tee /pkg-add.log
+run_cmd_wtee \"pkg-static \${PKG_CFLAG} ${PKG_FLAG} add -f $SYSBASEFILENAME\" \"/pkg-add.log\"
 if [ \$? -ne 0 ] ; then
   cat /pkg-add.log
   echo "FAILED INSTALLING $SYSBASEORIGIN"
