@@ -39,6 +39,12 @@ rc_nohalt()
   STATUS=$?
 }
 
+run_cmd_wtee()
+{
+  ((((${1} 2>&1 ; echo $? >&3 ) | tee -a ${2} >&4 ) 3>&1) | (read xs; exit $xs)) 4>&1
+  return $?
+}
+
 # Set the program location
 PROGDIR="/usr/local/share/trueos/pc-updatemanager" ; export PROGDIR
 
@@ -1373,7 +1379,7 @@ pkg_fetch_verify() {
   fetchRetries=$(expr $fetchRetries + 1)
 
   # Attempt to fetch the package
-  ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y $fetchPkg 2>&1 | tee -a ${PKGUPGRADELOG}
+  run_cmd_wtee "${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y $fetchPkg" "${PKGUPGRADELOG}"
   _err=$?
   tail -n 1 ${PKGUPGRADELOG} | grep -q -e "failed checksum" -e "timed out"
   if [ $_err -ne 0 -o $? -eq 0 ]; then
@@ -1455,7 +1461,7 @@ dl_pkgs()
   PKGFILENAME="`${PKG_CMD} ${PKG_FLAG} rquery -U '%n-%v' ports-mgmt/pkg 2>/dev/null | head -n 1`.txz"
 
   # Update the database once
-  ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} update | tee -a ${PKGUPGRADELOG}
+  run_cmd_wtee "${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} update" "${PKGUPGRADELOG}"
 
   # Download the ports-mgmt/pkg commands
   pkg_fetch_verify "ports-mgmt/pkg" "$PKGFILENAME"
@@ -1514,7 +1520,7 @@ dl_pkgs()
   while :
   do
     attempts=$(expr $attempts + 1)
-    ${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y -g 'FreeBSD-*' 2>&1 | tee -a ${PKGUPGRADELOG}
+    run_cmd_wtee "${PKG_CMD} ${PKG_CFLAG} ${PKG_FLAG} fetch -U -d -y -g 'FreeBSD-*'" "${PKGUPGRADELOG}"
     _err=$?
     tail -n 1 ${PKGUPGRADELOG} | grep -q -e "failed checksum" -e "timed out" -e "not found"
     if [ $_err -ne 0 -o $? -eq 0 ]; then
