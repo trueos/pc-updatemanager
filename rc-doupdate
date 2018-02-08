@@ -25,6 +25,13 @@
 # SUCH DAMAGE.
 #
 
+## Try to get error status of first command in pipeline ##
+run_cmd_wtee()
+{
+  ((((${1} 2>&1 ; echo $? >&3 ) | tee -a ${2} >&4 ) 3>&1) | (read xs; exit $xs)) 4>&1
+  return $?
+}
+
 # We are doing a major upgrade!
 TERM="cons25" ; export TERM
 export PATH="${PATH}:/usr/local/bin:/usr/local/sbin"
@@ -34,6 +41,7 @@ if [ -e "/var/.pc-attempt1" ] ; then
    echo "Rolling back to last known good BE..."
    oldBE=`cat /var/.lastGoodBE`
    /etc/beadm activate $oldBE
+   /sbin/reboot
 fi
 
 # Set indicator that this is first attempt at upgrading
@@ -57,7 +65,15 @@ echo "Preparing to do pkg installation..."
 sleep 5
 
 clear
-sh /.doPkgUp.sh 2>&1 | tee -a $OLOG
+run_cmd_wtee "sh /.doPkgUp.sh" "$OLOG"
+if [ $? -ne 0 ] ; then
+  oldBE=`cat /var/.lastGoodBE`
+  /etc/beadm activate $oldBE
+  echo "Failed updating! Reverting to last good boot-environment..."
+  sleep 10
+  /sbin/reboot
+fi
+
 sync
 rm /.doPkgUp.sh
 

@@ -1821,7 +1821,6 @@ prep_pkgs_chroot()
 
   # Copy the doPkgUp.sh template
   rc_halt "cp ${PROGDIR}/doPkgUp.sh ${STAGEMNT}/.doPkgUp.sh"
-  rc_halt "chmod 755 ${STAGEMNT}/.doPkgUp.sh"
 
   # Set the dynamic variables
   sed -i '' "s|%%PKG_FLAG%%|${PKG_FLAG}|g" ${STAGEMNT}/.doPkgUp.sh

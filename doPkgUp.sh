@@ -22,7 +22,7 @@ export OPENRC_BOOT_SERV OPENRC_DEFAULT_SERV OPENRC_SHUTDOWN_SERV OPENRC_NONET_SE
 run_cmd_wtee()
 {
   ((((${1} 2>&1 ; echo $? >&3 ) | tee -a ${2} >&4 ) 3>&1) | (read xs; exit $xs)) 4>&1
-  return \$?
+  return $?
 }
 
 # Copy over the trueos pkg fingerprints
@@ -125,20 +125,27 @@ rm /pkg-add.log
 echo "Installing $SYSBASEORIGIN... $SYSBASEFILENAME"
 run_cmd_wtee "pkg-static ${PKG_CFLAG} ${PKG_FLAG} add -f $SYSBASEFILENAME" "/pkg-add.log"
 if [ $? -ne 0 ] ; then
-  cat /pkg-add.log
-  echo "FAILED INSTALLING $SYSBASEORIGIN"
+  echo "FAILED INSTALL: ${SYSBASEORIGIN}"
+  sleep 10
   exit 1
 fi
 
 # Verify the base package was installed
-pkg-static ${PKG_CFLAG} ${PKG_FLAG} info -q ${SYSBASEORIGIN}
+echo "pkg-static info -q ${SYSBASEORIGIN}"
+pkg-static info -q ${SYSBASEORIGIN}
 if [ $? -ne 0 ] ; then
-  echo "FAILED INSTALLING ${SYSBASEORIGIN}"
+  echo "FAILED INFO: ${SYSBASEORIGIN}"
+  sleep 10
   exit 1
 fi
 
 # Lock the TrueOS base package
 pkg-static ${PKG_CFLAG} ${PKG_FLAG} lock -y ${SYSBASEORIGIN}
+if [ $? -ne 0 ] ; then
+  echo "FAILED LOCK: ${SYSBASEORIGIN}"
+  sleep 10
+  exit 1
+fi
 
 # Update kernel hints
 kldxref /boot/kernel /boot/modules
