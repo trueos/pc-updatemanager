@@ -1371,8 +1371,8 @@ pkg_fetch_verify() {
      if [ -e "/usr/local/bin/pc-systemflag" ] ; then
        pc-systemflag PKGUPDATE ERROR
      fi
-     echo_log "Failed fetching: ports-mgmt/pkg - $fetchPkgFile" >> ${PKGUPGRADELOG}
-     exit_err "Failed fetching: ports-mgmt/pkg - $fetchPkgFile"
+     echo_log "Failed fetching: $fetchPkg - $fetchPkgFile" >> ${PKGUPGRADELOG}
+     exit_err "Failed fetching: $fetchPkg - $fetchPkgFile"
   fi
 
   # Increment number of retry attempts
