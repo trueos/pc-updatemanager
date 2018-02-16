@@ -2051,10 +2051,10 @@ shutdown_update() {
   # Determine the tty to display details on
   if [ -e "/dev/ttyv1" ] ; then
     TTY="/dev/ttyv1"
-    FKEY="(Ctrl-Alt-F2 for details)"
+    FKEY="(Alt-F2 for details)"
   elif [ -e "/dev/ttyv2" ] ; then
     TTY="/dev/ttyv2"
-    FKEY="(Ctrl-Alt-F3 for details)"
+    FKEY="(Alt-F3 for details)"
   else
     TTY="/dev/null"
     FKEY=""
