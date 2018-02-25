@@ -18,6 +18,44 @@ OPENRC_SHUTDOWN_SERV="savecache"
 OPENRC_NONET_SERV="local"
 export OPENRC_BOOT_SERV OPENRC_DEFAULT_SERV OPENRC_SHUTDOWN_SERV OPENRC_NONET_SERV
 
+update_bootloader()
+{
+  local ROOTPOOL=`mount | grep 'on / ' | cut -d '/' -f 1`
+  if [ -z "$ROOTPOOL" ] ; then return ; fi
+
+  # Thow the new boot-loader on each disk
+  for disk in $(sysctl -n kern.disks); do
+
+    # Why CD's show up in kern.disks? Dunno...
+    echo $disk | grep -q "^cd[0-9]"
+    if [ $? -eq 0 ] ; then continue ; fi
+
+    # Check if the disk has a gptid on the second "p2" partition
+    gptid=$(gpart list $disk | grep rawuuid | sed -n 2p | awk '{print $2}')
+    # If we didn't find a gptid for this disk / partition, set to a bogus name so we dont match
+    if [ -z "$gptid" ] ; then gptid="bogusdisknamenotused" ; fi
+
+    # Does this disk exist in freenas-boot?
+    zpool status ${ROOTPOOL} | grep -q -e " ${disk}p" -e " gptid/$gptid "
+    if [ $? -ne 0 ] ; then continue ; fi
+    if gpart show ${disk} | grep -q freebsd-boot; then
+      echo "Updating to latest GPT/BIOS bootloader..."
+      part=$(gpart show ${disk} | grep " freebsd-boot " | awk '{print $3}')
+      gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i ${part} /dev/${disk}
+    elif gpart show ${disk} | grep -q " efi "; then
+      if [ ! -d "/boot/efi" ] ; then
+        mkdir -p /boot/efi
+      fi
+      part=$(gpart show ${disk} | grep " efi " | awk '{print $3}')
+      if mount -t msdosfs /dev/${disk}p${part} /boot/efi; then
+	echo "Updating to latest EFI bootloader..."
+        cp /boot/boot1.efi /boot/efi/efi/boot/BOOTx64.efi
+        umount -f /boot/efi
+      fi
+    fi
+  done
+}
+
 ## Try to get error status of first command in pipeline ##
 run_cmd_wtee()
 {
@@ -203,6 +241,9 @@ mv /previous-pkg-list /usr/local/log/pc-updatemanager/
 mv /removed-pkg-list /usr/local/log/pc-updatemanager/
 mv /failed-pkg-list /usr/local/log/pc-updatemanager/
 pkg-static info > /usr/local/log/pc-updatemanager/current-pkg-list
+
+# Update the boot-loader to latest
+update_bootloader
 
 echo "Updating pkgng config..."
 if [ -e "/var/db/trueos-pkg-ipfs-next" ] ; then
