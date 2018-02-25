@@ -49,7 +49,12 @@ update_bootloader()
       part=$(gpart show ${disk} | grep " efi " | awk '{print $3}')
       if mount -t msdosfs /dev/${disk}p${part} /boot/efi; then
 	echo "Updating to latest EFI bootloader..."
-        cp /boot/boot1.efi /boot/efi/efi/boot/BOOTx64.efi
+	# If they are using rEFInd and we have a bootx64-trueos.efi
+	if [ -e "/boot/efi/efi/boot/bootx64-trueos.efi" ] ; then
+          cp /boot/boot1.efi /boot/efi/efi/boot/bootx64-trueos.efi
+	else
+          cp /boot/boot1.efi /boot/efi/efi/boot/bootx64.efi
+	fi
         umount -f /boot/efi
       fi
     fi
