@@ -1828,9 +1828,15 @@ prep_pkgs_chroot()
   PACKAGE_BUILDING="YES"
   export PACKAGE_BUILDING
 
+  PKG_CMD="${PTMPDIR}/usr/local/sbin/pkg-static"
+  if [ ! -e "$PKG_CMD" ] ; then
+    echo_log "Missing boot-strapped PKG binary!"
+    exit 1
+  fi
+
   # Always install the latest base system packages
   echo_log "Boot-strapping package base..."
-  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} install -yfg 'FreeBSD-*' >>${LOGOUT} 2>>${LOGOUT}
+  ${PKG_CMD} -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} install -yfg 'FreeBSD-*' >>${LOGOUT} 2>>${LOGOUT}
   if [ $? -ne 0 ] ; then
     echo_log "FAILED INSTALLING world base packages"
     exit 1
@@ -1838,12 +1844,12 @@ prep_pkgs_chroot()
 
   # Set all pkgs as not auto-installed, so pkg autoremove doesn't touch them
   echo_log "Marking FreeBSD packages as not auto-installed"
-  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} set -y -A 00 -g FreeBSD-\* >>${LOGOUT} 2>>${LOGOUT}
+  ${PKG_CMD} -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} set -y -A 00 -g FreeBSD-\* >>${LOGOUT} 2>>${LOGOUT}
 
   # Check if something went horribly wrong
   if [ ! -e "${STAGEMNT}/bin/sh" ] ; then
      ABI_FLAG="-o ABI=freebsd:`uname -r | cut -c 1-2`:`uname -m`"
-     pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} ${ABI_FLAG} install -yfg 'FreeBSD-*' >>${LOGOUT} 2>>${LOGOUT}
+     ${PKG_CMD} -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} ${ABI_FLAG} install -yfg 'FreeBSD-*' >>${LOGOUT} 2>>${LOGOUT}
      if [ ! -e "${STAGEMNT}/bin/sh" ] ; then
        echo_log "Missing ${STAGEMNT}/bin/sh: Something went horribly wrong!"
        exit 1
@@ -1851,9 +1857,9 @@ prep_pkgs_chroot()
   fi
 
   # Work around an issue with some kmod pkgs which can hang the box before upgrade happens
-  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} unlock -ay >>${LOGOUT} 2>>${LOGOUT}
-  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} delete -yg '*kmod*' >>${LOGOUT} 2>>${LOGOUT}
-  pkg-static -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} delete -yg '*nvidia-driver*' >>${LOGOUT} 2>>${LOGOUT}
+  ${PKG_CMD} -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} unlock -ay >>${LOGOUT} 2>>${LOGOUT}
+  ${PKG_CMD} -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} delete -yg '*kmod*' >>${LOGOUT} 2>>${LOGOUT}
+  ${PKG_CMD} -c ${STAGEMNT} ${PKG_CFLAG} ${PKG_FLAG} delete -yg '*nvidia-driver*' >>${LOGOUT} 2>>${LOGOUT}
 
   # Workaround to issue in FreeBSD pkg base
   chown root:operator ${STAGEMNT}/sbin/shutdown
