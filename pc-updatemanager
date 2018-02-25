@@ -300,7 +300,7 @@ get_file() {
 		_fSize="`expr ${_fSize} / 1024 2>/dev/null`"
 		rm "/tmp/.fetch-size.$$" 2>/dev/null
 		_time=1
-   		if [ -z "$_fSize" ] ; then _fSize=0; fi
+		if [ -z "$_fSize" ] ; then _fSize=0; fi
 
 		( fetch -r -o "${_lf}" "${_rf}" >/dev/null 2>/dev/null ; echo "$?" > ${_eFile} ) &
 		FETCH_PID=`ps -auwwwx | grep -v grep | grep "fetch -r -o ${_lf}" | awk '{print $2}'`
@@ -337,7 +337,7 @@ get_file() {
 		# Remove the local file if we failed
 		if [ -e "${_lf}" ]; then rm "${_lf}"; fi
 
-		get_file "${_rf}" "${_lf}" $_ftries	
+		get_file "${_rf}" "${_lf}" $_ftries
 		_err=$?
 	fi
 	return $_err
@@ -517,7 +517,7 @@ get_update_file() {
   if [ $? -ne 0 ] ; then
      rm ${PATCHTMPFILE} 2>/dev/null
      is_net_up
-     if [ $? -eq 0 ] ; then 
+     if [ $? -eq 0 ] ; then
        echo "No updates available for $SYSVER!" ; exit 0
      else
        exit_err "Could not contact update server!"
@@ -626,7 +626,7 @@ list_branches() {
   done < ${PATCHTMPFILE}
 
   # If no patches
-  if [ "${BRANCHFOUND}" = "0" ]; then 
+  if [ "${BRANCHFOUND}" = "0" ]; then
      # No available updates
      echo "No branches currently available!"
   fi
@@ -658,7 +658,7 @@ do_check() {
   done < ${PATCHTMPFILE}
 
   # If no patches
-  if [ "${PATCHFOUND}" = "0" ]; then 
+  if [ "${PATCHFOUND}" = "0" ]; then
      # No available updates
      echo "Your system is up to date!"
      if [ -e "/usr/local/bin/pc-systemflag" ]; then
@@ -1223,6 +1223,7 @@ mk_pkg_conf()
   fi
   echo "PKG_CACHEDIR: $REALPKGDLCACHE" > /var/db/pc-updatemanager/.pkgUpdate.conf
   echo "PKG_DBDIR: /var/db/pc-updatemanager/pkgdb" >> /var/db/pc-updatemanager/.pkgUpdate.conf
+  echo "IGNORE_OSVERSION: YES" >> /var/db/pc-updatemanager/.pkgUpdate.conf
 
   # If we are starting an upgrade, we need to "prime" the new PKG_DBDIR
   # This is done so if the user decides to use 'pkg' after an update is staged, we don't
@@ -1433,6 +1434,32 @@ dl_pkgs()
   #echo_log "Checking for updates to ports-mgmt/pkg.."
   #${PKG_CMD} upgrade -y ports-mgmt/pkg
 
+  # Get the URL for the base packages
+  echo $PKG_FLAG | grep -q "/usr/local/tmp/.updateRepo"
+  if [ $? -eq 0 ] ; then
+    BPURL=$(cat /usr/local/tmp/.updateRepo/pkgUpdateRepo.conf | grep 'url:' | tail -n 1 | awk '{print $2}' | cut -d '"' -f 2)
+    PURL=$(cat /usr/local/tmp/.updateRepo/pkgUpdateRepo.conf | grep 'url:' | head -n 1 | awk '{print $2}' | cut -d '"' -f 2)
+  else
+    BURL=$(cat /usr/local/etc/pkg/repos/trueos-base.conf | grep 'url:' | awk '{print $2}' | cut -d '"' -f 2)
+    PURL=$(cat /usr/local/etc/pkg/repos/trueos.conf | grep 'url:' | awk '{print $2}' | cut -d '"' -f 2)
+  fi
+
+  # Fetch the updated version of PKG
+  PTMPDIR="/var/run/pc-updatemanager/pkgbs"
+  rm -rf ${PTMPDIR}
+  mkdir -p ${PTMPDIR}
+  echo_log "Boot-strapping latest PKGNG"
+  get_file "${PURL}/Latest/pkg.txz" "${PTMPDIR}/.pkg.txz.$$" "3" >/dev/null 2>/dev/null
+  if [ ! -e "${PTMPDIR}/.pkg.txz.$$" ] ; then
+    exit_err "Failed bootstrapping latest PKG"
+  fi
+
+  tar xvf ${PTMPDIR}/.pkg.txz.$$ -C ${PTMPDIR} /usr/local/sbin/pkg-static 2>/dev/null >/dev/null
+  if [ $? -ne 0 ] ; then
+    exit_err "Failed extracting latest PKG"
+  fi
+  PKG_CMD="${PTMPDIR}/usr/local/sbin/pkg-static"
+
   # Update the DB first
   echo_log "Updating the package repo database..."
   ${PKG_CMD} ${PKG_FLAG} update -f >/dev/null 2>/dev/null
@@ -1447,14 +1474,6 @@ dl_pkgs()
 
   if [ -e "$NEWPKGLIST" ] ; then rm $NEWPKGLIST; fi
   touch ${NEWPKGLIST}
-
-  # Get the URL for the base packages
-  echo $PKG_FLAG | grep -q "/usr/local/tmp/.updateRepo"
-  if [ $? -eq 0 ] ; then
-    BPURL=$(cat /usr/local/tmp/.updateRepo/pkgUpdateRepo.conf | grep 'url:' | grep "${ARCH}-base" | awk '{print $2}' | cut -d '"' -f 2)
-  else
-    BPURL=$(cat /usr/local/etc/pkg/repos/trueos-base.conf | grep 'url:' | awk '{print $2}' | cut -d '"' -f 2)
-  fi
 
   # Fetch the fbsd-distrib.txz file
   echo "fetch -o ${REALPKGDLCACHE}/fbsd-distrib.txz ${BPURL}/fbsd-distrib.txz"
