@@ -202,6 +202,9 @@ OPENRC_SHUTDOWN_SERV="savecache"
 OPENRC_NONET_SERV="local"
 export OPENRC_BOOT_SERV OPENRC_DEFAULT_SERV OPENRC_SHUTDOWN_SERV OPENRC_NONET_SERV
 
+# Pkg does stuff now with ABIs and it prevents updating the database
+export IGNORE_OSVERSION="YES"
+
 ######################################################################
 # Done with config values
 ######################################################################
@@ -986,7 +989,17 @@ checkup_pkgs() {
 
   # Update the repo DB
   if [ "`id -u`" = "0" ] ; then
-    rc_halt "${PKG_CMD} update"
+    echo "Updating the pkg database..."
+    ${PKG_CMD} update >/tmp/.updateOut.$$ 2>&1
+    if [ $? -ne 0 ] ; then
+      grep -q "Newer FreeBSD version" /tmp/.updateOut.$$
+      if [ $? -eq 0 ] ; then
+        rm /tmp/.updateOut.$$
+        updates_are_available
+	return $?
+      fi
+    fi
+    rm /tmp/.updateOut.$$
   fi
 
   ${PKG_CMD} ${PKG_FLAG} upgrade -n >/tmp/.pkgData.$$
@@ -1005,6 +1018,14 @@ checkup_pkgs() {
   # Display the pkg update data
   cat /tmp/.pkgData.$$
   rm /tmp/.pkgData.$$
+
+  # We have updates
+  updates_are_available
+  return $?
+}
+
+updates_are_available()
+{
   echo "The following updates are available:"
   echo "------------------------------------"
   echo "NAME: System package updates"
