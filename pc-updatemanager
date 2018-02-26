@@ -1440,7 +1440,7 @@ dl_pkgs()
     BPURL=$(cat /usr/local/tmp/.updateRepo/pkgUpdateRepo.conf | grep 'url:' | tail -n 1 | awk '{print $2}' | cut -d '"' -f 2)
     PURL=$(cat /usr/local/tmp/.updateRepo/pkgUpdateRepo.conf | grep 'url:' | head -n 1 | awk '{print $2}' | cut -d '"' -f 2)
   else
-    BURL=$(cat /usr/local/etc/pkg/repos/trueos-base.conf | grep 'url:' | awk '{print $2}' | cut -d '"' -f 2)
+    BPURL=$(cat /usr/local/etc/pkg/repos/trueos-base.conf | grep 'url:' | awk '{print $2}' | cut -d '"' -f 2)
     PURL=$(cat /usr/local/etc/pkg/repos/trueos.conf | grep 'url:' | awk '{print $2}' | cut -d '"' -f 2)
   fi
 
