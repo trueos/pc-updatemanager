@@ -192,7 +192,7 @@ PKGUPDATERTN=100
 UPDATEOTHERRTN=125
 
 # Files to overwrite in /etc with upgrades
-ETC_DISTUPGRADE="./etc/rc ./etc/rc.shutdown ./etc/rc.devd ./etc/devd.conf ./etc/defaults/rc.conf ./etc/auto_master /etc/autofs"
+ETC_DISTUPGRADE="./etc/rc ./etc/rc.shutdown ./etc/rc.devd ./etc/devd.conf ./etc/defaults/rc.conf ./etc/auto_master /etc/autofs /etc/network.subr"
 
 # Default OpenRC Services to enable
 OPENRC_BOOT_SERV="abi adjkerntz bootmisc cron devd dumpon fsck hostid hostname localmount loopback modules motd network newsyslog nisdomain"
