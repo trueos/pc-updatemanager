@@ -2253,6 +2253,10 @@ if [ "`id -u`" = "0" ] ; then
 
   # Make the ignore directory for this version
   if [ ! -d "${IGNDIR}/${SYSVER}" ] ; then mkdir -p ${IGNDIR}/${SYSVER} ; fi
+
+  # Fix issue with IPFS files being located in ${HOME}/.ipfs and somebody running
+  # with sudo
+  export HOME="/root"
 fi
 
 if [ $# -eq 0 ] ; then
