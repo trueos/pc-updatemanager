@@ -1451,9 +1451,13 @@ dl_pkgs()
   echo_log "Boot-strapping latest PKGNG"
 
   # Work-around issue with fetch not being able to pull down a symlink'd pkg file
-  _IPHASH="/$(echo $PURL/Latest/pkg.txz| cut -d '/' -f 4-)"
-  ipfs-go get -o ${PTMPDIR}/pkg.txz $_IPHASH
-  _PKGFILE=$(readlink ${PTMPDIR}/pkg.txz)
+  if [ "$CDN_TYPE" = "IPFS" ] ; then
+    _IPHASH="/$(echo $PURL/Latest/pkg.txz| cut -d '/' -f 4-)"
+    ipfs-go get -o ${PTMPDIR}/pkg.txz $_IPHASH
+    _PKGFILE=$(readlink ${PTMPDIR}/pkg.txz)
+  else
+    _PKGFILE="pkg.txz"
+  fi
 
   # Fetch the real filename
   get_file "${PURL}/Latest/${_PKGFILE}" "${PTMPDIR}/.pkg.txz.$$" "3"
