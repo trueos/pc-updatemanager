@@ -1455,14 +1455,22 @@ dl_pkgs()
     _IPHASH="/$(echo $PURL/Latest/pkg.txz| cut -d '/' -f 4-)"
     ipfs-go get -o ${PTMPDIR}/pkg.txz $_IPHASH
     _PKGFILE=$(readlink ${PTMPDIR}/pkg.txz)
+    if [ -z "${_PKGFILE}" ] ; then
+      mv "${PTMPDIR}/pkg.txz" "${PTMPDIR}/.pkg.txz.$$"
+    else
+      # Fetch the real filename
+      get_file "${PURL}/Latest/${_PKGFILE}" "${PTMPDIR}/.pkg.txz.$$" "3"
+      if [ ! -e "${PTMPDIR}/.pkg.txz.$$" ] ; then
+        exit_err "Failed bootstrapping latest PKG"
+      fi
+    fi
   else
     _PKGFILE="pkg.txz"
-  fi
-
-  # Fetch the real filename
-  get_file "${PURL}/Latest/${_PKGFILE}" "${PTMPDIR}/.pkg.txz.$$" "3"
-  if [ ! -e "${PTMPDIR}/.pkg.txz.$$" ] ; then
-    exit_err "Failed bootstrapping latest PKG"
+    # Fetch the real filename
+    get_file "${PURL}/Latest/${_PKGFILE}" "${PTMPDIR}/.pkg.txz.$$" "3"
+    if [ ! -e "${PTMPDIR}/.pkg.txz.$$" ] ; then
+      exit_err "Failed bootstrapping latest PKG"
+    fi
   fi
 
   tar xvf ${PTMPDIR}/.pkg.txz.$$ -C ${PTMPDIR} /usr/local/sbin/pkg-static 2>/dev/null >/dev/null
