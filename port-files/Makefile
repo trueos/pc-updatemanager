@@ -10,8 +10,6 @@ COMMENT=	TrueOS update manager
 
 LICENSE=	BSD2CLAUSE
 
-RUN_DEPENDS=	${LOCALBASE}/bin/ipfs-go:sysutils/ipfs-go
-
 USES=		pkgconfig tar:xz
 MAKE_ARGS=	PREFIX=${STAGEDIR}${PREFIX}
 
